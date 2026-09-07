@@ -1,5 +1,13 @@
 import { NextResponse } from 'next/server'
 
+import {
+  CACHE_SECONDS,
+  getJson,
+  LEAD_NODE,
+  NODE_PORTS,
+  NODE_HOST,
+  tryJson,
+} from '@/lib/chain-nodes'
 import { parseBlock, parseChainTime, parseNodeStatus } from '@/lib/cryptarchia'
 
 /**
@@ -14,34 +22,8 @@ import { parseBlock, parseChainTime, parseNodeStatus } from '@/lib/cryptarchia'
  * wallet and SDP routes); nothing here goes near them.
  */
 
-/** From `deployment/.env.testnet` in logos-blockchain: PUBLIC_IP_ADDR + node API ports. */
-const NODE_HOST = 'http://65.109.51.37'
-const NODE_PORTS = [18080, 18081, 18082, 18083] as const
-
 /** How many recent blocks to resolve. Each one is a request, so this is kept small. */
 const BLOCK_LIMIT = 12
-
-/** Someone else's testnet, so answers are shared rather than fetched per visitor. */
-const CACHE_SECONDS = 10
-const NODE_TIMEOUT_MS = 8000
-
-async function getJson(url: string): Promise<unknown> {
-  const response = await fetch(url, {
-    signal: AbortSignal.timeout(NODE_TIMEOUT_MS),
-    next: { revalidate: CACHE_SECONDS },
-  })
-  if (!response.ok) throw new Error(`${url} answered ${response.status}`)
-  return response.json()
-}
-
-/** Anything optional: a testnet endpoint going quiet must not fail the page. */
-async function tryJson(url: string): Promise<unknown> {
-  try {
-    return await getJson(url)
-  } catch {
-    return null
-  }
-}
 
 async function readNode(port: number) {
   try {
@@ -57,7 +39,7 @@ async function readNode(port: number) {
 }
 
 export async function GET() {
-  const lead = `${NODE_HOST}:${NODE_PORTS[0]}`
+  const lead = LEAD_NODE
 
   const [statuses, rawHeaders, rawTime, rawMempool] = await Promise.all([
     Promise.all(NODE_PORTS.map(readNode)),

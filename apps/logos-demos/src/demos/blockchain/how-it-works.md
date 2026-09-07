@@ -30,6 +30,35 @@ the chain: `/cryptarchia/headers` returns recent header hashes newest first,
 each block names its parent, and the visible slice is resolved one request at a
 time. That is why twelve are shown out of the hundred-odd available.
 
+Clicking a block id opens its own page, which is rendered on the server and can
+be shared as a link.
+
+## Live blocks
+
+The node also publishes a stream of blocks as they are accepted. It is
+newline-delimited JSON on a long-lived connection, and each line carries the
+new block plus the updated tip. The app re-frames those lines as server-sent
+events, which the browser consumes with `EventSource`.
+
+Blocks that arrive that way are marked **arrived live** and appear before the
+polled list, so the page updates the moment a block is made rather than at the
+next fifteen-second poll.
+
+Two details make it hold up. A comment line every fifteen seconds keeps the
+connection open through the quiet gap between blocks, which would otherwise be
+closed as idle. And the relay lets go after a few minutes rather than holding a
+serverless instance open indefinitely; `EventSource` reconnects on its own, so
+the badge ignores short drops instead of flickering.
+
+## Search
+
+One box, resolved against the node in turn: block id, then transaction hash,
+then address. There is no unified search endpoint, so the app tries each.
+
+Only block ids find anything at the moment. The testnet is carrying no
+transactions, so there is nothing for a transaction hash to match, and the page
+says so rather than looking broken.
+
 ## Where the data comes from
 
 ```mermaid
