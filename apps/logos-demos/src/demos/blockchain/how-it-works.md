@@ -1,109 +1,79 @@
 ## What you are looking at
 
-Each row is a real block from the Logos Execution Zone testnet: its number, its
-hash, how many transactions it carried, and whether consensus has finalised it.
+This reads the Logos Blockchain testnet **nodes** directly, not a block
+explorer. Everything on the page is what the consensus layer reports about
+itself.
 
-Blocks arrive about once a minute when the chain is producing. The badge at the
-top says whether that is happening now, because a list of blocks looks identical
-whether the newest one landed a minute ago or a week ago.
+- **Height and slot** are Cryptarchia's own counters for the base chain.
+- **Chain tip** is the newest block the node has accepted.
+- **Last irreversible block** is the newest one that can no longer be reorged
+  away. The gap between the two is how far finality trails the tip.
+- **Phase** is where the node sits in consensus, for example `Following`.
 
-## This demo has a server in the path
-
-The messaging demo has no backend. This one does, and it is worth being precise
-about why.
-
-```mermaid
-flowchart TB
-  subgraph msg["Logos Messaging"]
-    direction LR
-    M1["Your browser"] --> M2["The network"]
-  end
-  subgraph chain["This demo"]
-    direction LR
-    C1["Your browser"] --> C2["Proxy in this app"] --> C3["Block explorer"]
-  end
-  msg ~~~ chain
-```
-
-The public block explorer answers requests happily, but it does not send the
-header that lets a browser on another site read the response. That is a
-deliberate default, not a fault. So the browser asks this app instead, and this
-app asks the explorer, where that restriction does not apply.
-
-What goes through the proxy is narrow on purpose: **public block data, read
-only**. No key of yours, nothing you typed, and nothing written back.
+Four testnet nodes are queried, and the page says whether they agree on the
+tip. Agreement is consensus working; disagreement would mean a fork or a node
+falling behind.
 
 ## Where the data comes from
 
 ```mermaid
-sequenceDiagram
-  participant B as Your browser
-  participant P as Proxy
-  participant E as Block explorer
-
-  B->>P: recent blocks?
-  P->>E: get_blocks (limit 12)
-  E-->>P: block headers and transactions
-  P-->>B: the same, as JSON
-  Note over P: answers are shared<br/>for ten seconds
+flowchart TB
+  subgraph want["What we would prefer"]
+    direction LR
+    W1["Your browser"] --> W2["Testnet node"]
+  end
+  subgraph real["What actually happens"]
+    direction LR
+    R1["Your browser"] --> R2["Endpoint in this app"] --> R3["Testnet node"]
+  end
+  want ~~~ real
 ```
 
-The explorer is someone else's testnet service, so the proxy caches for ten
-seconds and the page polls every fifteen. A room full of people watching this
-page produces about one request to the explorer per ten seconds, not one per
-person.
+The nodes answer with `access-control-allow-origin: *`, so they would happily
+take a call from your browser. The obstacle is not permission. They are served
+over plain HTTP while this page is HTTPS, and a browser blocks that as mixed
+content before the request is ever sent.
 
-## Why the chain might look idle
+So a small read-only endpoint in this app makes the call instead. If the nodes
+were ever served over HTTPS, that endpoint could be deleted and the page would
+talk to them directly.
 
-This is a testnet. It is restarted, upgraded and left alone between
-experiments, and it has sat without producing a block for days at a time.
+```mermaid
+sequenceDiagram
+  participant B as Your browser
+  participant A as Endpoint in this app
+  participant N as 4 testnet nodes
 
-That is not the demo failing. It is what a test network looks like, and hiding
-it would make the page less honest rather than more impressive.
+  B->>A: what is the chain doing?
+  A->>N: cryptarchia/info, network/info
+  N-->>A: tip, height, slot, peers
+  A-->>B: the same, as JSON
+  Note over A: answers shared<br/>for ten seconds
+```
 
-## Searching
+The nodes are someone else's testnet, so answers are cached for ten seconds and
+the page polls every fifteen. A node that does not answer is left out rather
+than taking the whole view down.
 
-One box covers everything, because the explorer works out for itself what a
-query is:
+## Reading the liveness badge
 
-| You type | You get |
-| --- | --- |
-| A block number, like `30017` | That block |
-| A full transaction hash | That transaction, its program and the accounts it touched |
-| An account address | Its balance, nonce and owning program |
+The nodes report `state: "Online"` whether or not blocks are being produced,
+so that field only tells you the process is running. The badge at the top
+instead watches when the height last changed, which is the honest question.
 
-An unrecognised query comes back empty rather than as an error. Note the
-explorer's index runs behind the chain head, so something very recent can be
-missing for a while even though it is confirmed.
+Measured cadence on this testnet is a block every 30 to 90 seconds, so a
+minute of quiet is ordinary and the badge stays green through it. It only
+turns if the height has not moved for five minutes.
 
-Expanding a block in the list shows its transactions without asking the
-explorer again: they arrive with the block.
+## What is not here
 
-**Every hash and address is followable.** Clicking one searches it, so you can
-walk from a block to its previous block, from a transaction to the accounts it
-touched, or from an account to the program that owns it. An account also lists
-its own transactions, a page at a time.
-
-The query lives in the URL, so anything you find can be sent to someone else and
-the back button behaves.
-
-## What is not here, and why
-
-There is no wallet, nothing to send, and no account of your own.
-
-That is not caution on our part. **The explorer has no write endpoint to call.**
-Its seven server functions are six `get_*` and a `search`, and the node APIs
-that could accept a transaction are not publicly reachable: the testnet
-deployment sits behind a Github sign-in, and the fleet nodes do not expose their
-HTTP ports.
-
-Even with an open endpoint, sending a transaction here would mean holding a key
-in the browser and producing a zero-knowledge proof for it. Both are real
-pieces of work, and neither belongs in a demo whose point is that you can look
-without installing anything.
+No wallet, nothing to send, no account of your own. The nodes expose one write
+surface, `/mempool/add/tx`, and nothing here goes near it. Submitting a
+transaction would mean holding a key in the browser and building a proof for
+it, which is a different piece of work entirely.
 
 | What | Where |
 | --- | --- |
-| Proxy route | `src/app/api/blockchain/blocks/route.ts` |
-| Shapes and liveness | `src/lib/blockchain.ts` |
-| Explorer endpoints and their quirks | `docs/network-access.md` |
+| The endpoint | `src/app/api/chain/route.ts` |
+| Shapes and liveness | `src/lib/cryptarchia.ts` |
+| Node addresses and API surface | `docs/network-access.md` |

@@ -112,16 +112,14 @@ Every page is prerendered (`○ prerendered as static content`). The only
 server-rendered entries should be the blockchain proxy routes (`ƒ`):
 
 ```
-├ ƒ /api/blockchain/account
-├ ƒ /api/blockchain/blocks
-├ ƒ /api/blockchain/search
+├ ƒ /api/chain
 ├ ○ /blockchain
 └ ○ /messaging
 ```
 
-If a page turns from `○` into `ƒ`, or a route appears that is not one of those
-three, something has quietly added a server dependency and the claims on the
-pages need re-reading.
+If a page turns from `○` into `ƒ`, or a second route appears, something has
+quietly added a server dependency and the claims on the pages need
+re-reading.
 
 ## Turbopack serves stale CSS
 
