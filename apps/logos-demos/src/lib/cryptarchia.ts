@@ -34,11 +34,135 @@ export type NodeStatus = {
   connectedPeers: string[]
 }
 
+/**
+ * A block as the node returns it.
+ *
+ * `proofOfLeadership` is the part worth showing: Cryptarchia picks proposers
+ * through a private lottery, so the block carries a proof that its author won
+ * without naming who they are.
+ */
+export type Block = {
+  id: string
+  parent: string
+  slot: number
+  /** Wall-clock time derived from the slot, or null before time info is known. */
+  timestamp: number | null
+  transactionCount: number
+  leaderKey: string
+  voucherCommitment: string
+  entropyContribution: string
+}
+
+/** Genesis and slot length, used to turn a slot number into a timestamp. */
+export type ChainTime = {
+  slotDurationMs: number
+  genesisTimeUnixMs: number
+  currentEpoch: number
+}
+
 export type ChainView = {
   nodes: NodeStatus[]
-  /** Recent header hashes, newest first, from the first node that answered. */
-  headers: string[]
+  blocks: Block[]
+  /** How many recent header hashes the node offered, whether or not all were fetched. */
+  headerCount: number
+  /** Transactions waiting to be included. */
+  mempoolSize: number
+  time: ChainTime | null
   fetchedAt: number
+}
+
+export function parseChainTime(raw: unknown): ChainTime | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const {
+    slot_duration_ms: duration,
+    genesis_time_unix_ms: genesis,
+    current_epoch: epoch,
+  } = raw as Record<string, unknown>
+
+  if (typeof duration !== 'number' || typeof genesis !== 'number') return null
+  return {
+    slotDurationMs: duration,
+    genesisTimeUnixMs: genesis,
+    currentEpoch: typeof epoch === 'number' ? epoch : 0,
+  }
+}
+
+/**
+ * Validate chain time as the route returns it, already normalised.
+ *
+ * Running `parseChainTime` over this instead returns null and the epoch
+ * silently renders as a dash. See the note in AGENTS.md; this is the third
+ * time the two shapes have been confused.
+ */
+export function parseChainTimeSummary(raw: unknown): ChainTime | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const { slotDurationMs, genesisTimeUnixMs, currentEpoch } = raw as Record<
+    string,
+    unknown
+  >
+  if (typeof slotDurationMs !== 'number' || typeof genesisTimeUnixMs !== 'number') {
+    return null
+  }
+  return {
+    slotDurationMs,
+    genesisTimeUnixMs,
+    currentEpoch: typeof currentEpoch === 'number' ? currentEpoch : 0,
+  }
+}
+
+export function slotToTimestamp(slot: number, time: ChainTime | null): number | null {
+  if (!time) return null
+  return time.genesisTimeUnixMs + slot * time.slotDurationMs
+}
+
+/** Validate one block as the node returns it. */
+export function parseBlock(raw: unknown, time: ChainTime | null): Block | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const { header, transactions } = raw as Record<string, unknown>
+  if (typeof header !== 'object' || header === null) return null
+
+  const {
+    id,
+    parent_block: parent,
+    slot,
+    proof_of_leadership: proof,
+  } = header as Record<string, unknown>
+
+  if (typeof id !== 'string' || typeof slot !== 'number') return null
+
+  const lottery = (proof as Record<string, unknown> | undefined) ?? {}
+  const text = (value: unknown) => (typeof value === 'string' ? value : '')
+
+  return {
+    id,
+    parent: typeof parent === 'string' ? parent : '',
+    slot,
+    timestamp: slotToTimestamp(slot, time),
+    transactionCount: Array.isArray(transactions) ? transactions.length : 0,
+    leaderKey: text(lottery.leader_key),
+    voucherCommitment: text(lottery.voucher_cm),
+    entropyContribution: text(lottery.entropy_contribution),
+  }
+}
+
+/** Validate a block that has already been through `parseBlock`, as the route returns it. */
+export function parseBlockSummary(raw: unknown): Block | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const b = raw as Record<string, unknown>
+  if (typeof b.id !== 'string' || typeof b.slot !== 'number') return null
+
+  const text = (value: unknown) => (typeof value === 'string' ? value : '')
+  return {
+    id: b.id,
+    parent: text(b.parent),
+    slot: b.slot,
+    timestamp: typeof b.timestamp === 'number' ? b.timestamp : null,
+    transactionCount:
+      typeof b.transactionCount === 'number' ? b.transactionCount : 0,
+    leaderKey: text(b.leaderKey),
+    voucherCommitment: text(b.voucherCommitment),
+    entropyContribution: text(b.entropyContribution),
+  }
 }
 
 export type Liveness =
@@ -94,7 +218,8 @@ export function parseNodeStatus(raw: unknown, label: string): NodeStatus | null 
 /** Validate the payload this app's own route returns, which is already normalised. */
 export function parseChainView(raw: unknown): ChainView | null {
   if (typeof raw !== 'object' || raw === null) return null
-  const { nodes, headers, fetchedAt } = raw as Record<string, unknown>
+  const { nodes, blocks, headerCount, mempoolSize, time, fetchedAt } =
+    raw as Record<string, unknown>
   if (!Array.isArray(nodes)) return null
 
   return {
@@ -102,9 +227,14 @@ export function parseChainView(raw: unknown): ChainView | null {
       (n): n is NodeStatus =>
         typeof n === 'object' && n !== null && 'height' in n && 'tip' in n,
     ),
-    headers: Array.isArray(headers)
-      ? headers.filter((h): h is string => typeof h === 'string')
+    blocks: Array.isArray(blocks)
+      ? blocks
+          .map(parseBlockSummary)
+          .filter((b): b is Block => b !== null)
       : [],
+    headerCount: typeof headerCount === 'number' ? headerCount : 0,
+    mempoolSize: typeof mempoolSize === 'number' ? mempoolSize : 0,
+    time: parseChainTimeSummary(time),
     fetchedAt: typeof fetchedAt === 'number' ? fetchedAt : Date.now(),
   }
 }
@@ -127,6 +257,10 @@ export function readLiveness(
 }
 
 /** "just now", "40s ago", "6 min ago". */
+export function formatTimestamp(ms: number): string {
+  return new Date(ms).toISOString().replace('T', ' ').slice(0, 19) + ' UTC'
+}
+
 export function formatAge(ms: number): string {
   if (ms < 5000) return 'just now'
   if (ms < 60000) return `${Math.floor(ms / 1000)}s ago`

@@ -14,6 +14,22 @@ Four testnet nodes are queried, and the page says whether they agree on the
 tip. Agreement is consensus working; disagreement would mean a fork or a node
 falling behind.
 
+## Blocks
+
+Below that is the recent chain. Opening a block shows its **proof of
+leadership**, which is the part that makes Cryptarchia different from most
+proof-of-stake chains: proposers are chosen by a private lottery, so a block
+proves its author won the right to make it without revealing who they are. The
+leader key, voucher commitment and entropy contribution are that proof.
+
+Timestamps are derived rather than stored. `/time/info` gives the genesis time
+and slot length, so a slot number converts to wall-clock time.
+
+The node has no working slot-range query, so the block list is built by walking
+the chain: `/cryptarchia/headers` returns recent header hashes newest first,
+each block names its parent, and the visible slice is resolved one request at a
+time. That is why twelve are shown out of the hundred-odd available.
+
 ## Where the data comes from
 
 ```mermaid

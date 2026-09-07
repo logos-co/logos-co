@@ -26,7 +26,7 @@ export const DEMOS: readonly Demo[] = [
     label: 'Logos Blockchain',
     stack: 'Cryptarchia',
     summary:
-      'Live consensus state read from the Logos Blockchain testnet nodes: chain tip, finality, and who each node is connected to.',
+      'Live blocks and consensus state read from the Logos Blockchain testnet nodes, including the proof of leadership behind each block.',
   },
 ]
 

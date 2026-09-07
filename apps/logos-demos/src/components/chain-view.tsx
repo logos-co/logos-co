@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react'
 
 import { useChain } from '@/components/use-chain'
-import type { NodeStatus } from '@/lib/cryptarchia'
+import type { Block, NodeStatus } from '@/lib/cryptarchia'
 import {
   finalityGap,
   formatAge,
+  formatTimestamp,
   nodesAgree,
   readLiveness,
   shortenHash,
@@ -101,6 +102,72 @@ function NodeCard({ node }: { node: NodeStatus }) {
   )
 }
 
+/**
+ * A block, expandable to its proof of leadership.
+ *
+ * The proof is the part that makes this chain different: proposers are picked
+ * by a private lottery, so a block shows that its author won without saying
+ * who they are.
+ */
+function BlockRow({ block }: { block: Block }) {
+  return (
+    <li className="border-t border-gray-01 first:border-t-0">
+      <details>
+        <summary className="flex cursor-pointer flex-wrap items-baseline gap-x-4 gap-y-1 px-4 py-3">
+          <span className="text-h4-sans w-28 shrink-0 text-brand-dark-green">
+            {block.slot}
+          </span>
+          <span className="text-mono-s flex-1 break-all text-gray-06">
+            {shortenHash(block.id)}
+          </span>
+          <span className="text-caption-sans text-gray-05">
+            {block.transactionCount}{' '}
+            {block.transactionCount === 1 ? 'tx' : 'txs'}
+          </span>
+          <span className="text-mono-s w-full text-gray-04 sm:w-auto">
+            {block.timestamp === null ? '—' : formatTimestamp(block.timestamp)}
+          </span>
+        </summary>
+
+        <dl className="flex flex-col gap-3 border-t border-gray-01 px-4 py-4">
+          <div className="flex flex-col gap-1">
+            <dt className="text-eyebrow text-gray-05">Block id</dt>
+            <dd className="text-mono-s break-all text-brand-dark-green">
+              {block.id}
+            </dd>
+          </div>
+          <div className="flex flex-col gap-1">
+            <dt className="text-eyebrow text-gray-05">Parent</dt>
+            <dd className="text-mono-s break-all text-gray-06">
+              {block.parent || '—'}
+            </dd>
+          </div>
+          <div className="flex flex-col gap-1">
+            <dt className="text-eyebrow text-gray-05">
+              Leader key (proof of leadership)
+            </dt>
+            <dd className="text-mono-s break-all text-gray-06">
+              {block.leaderKey || '—'}
+            </dd>
+          </div>
+          <div className="flex flex-col gap-1">
+            <dt className="text-eyebrow text-gray-05">Voucher commitment</dt>
+            <dd className="text-mono-s break-all text-gray-06">
+              {block.voucherCommitment || '—'}
+            </dd>
+          </div>
+          <div className="flex flex-col gap-1">
+            <dt className="text-eyebrow text-gray-05">Entropy contribution</dt>
+            <dd className="text-mono-s break-all text-gray-06">
+              {block.entropyContribution || '—'}
+            </dd>
+          </div>
+        </dl>
+      </details>
+    </li>
+  )
+}
+
 export function ChainView() {
   const { view, heightChangedAt, isLoading, error } = useChain()
   const lead = view?.nodes[0] ?? null
@@ -124,11 +191,11 @@ export function ChainView() {
           <dl className="grid grid-cols-2 gap-5 sm:grid-cols-4">
             <Stat label="Height" value={String(lead.height)} />
             <Stat label="Slot" value={String(lead.slot)} />
-            <Stat label="Phase" value={lead.phase} />
             <Stat
-              label="Finality gap"
-              value={`${finalityGap(lead)} slots`}
+              label="Epoch"
+              value={view?.time ? String(view.time.currentEpoch) : '—'}
             />
+            <Stat label="Finality gap" value={`${finalityGap(lead)} slots`} />
           </dl>
 
           <dl className="flex flex-col gap-4 border-t border-gray-01 pt-4">
@@ -172,22 +239,24 @@ export function ChainView() {
         </section>
       )}
 
-      {view && view.headers.length > 0 && (
+      {view && view.blocks.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-eyebrow text-gray-05">
-            Recent headers ({view.headers.length})
-          </h2>
-          <ol className="flex flex-col border border-gray-01 bg-white">
-            {view.headers.slice(0, 12).map((hash, index) => (
-              <li
-                key={hash}
-                className="text-mono-s flex gap-4 border-t border-gray-01 px-4 py-2 text-gray-06 first:border-t-0"
-              >
-                <span className="w-6 shrink-0 text-gray-04">{index}</span>
-                <span className="break-all">{hash}</span>
-              </li>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-eyebrow text-gray-05">
+              Recent blocks ({view.blocks.length} of {view.headerCount})
+            </h2>
+            <span className="text-caption-sans text-gray-05">
+              {view.mempoolSize === 0
+                ? 'mempool empty'
+                : `${view.mempoolSize} in mempool`}
+            </span>
+          </div>
+
+          <ul className="flex flex-col border border-gray-01 bg-white">
+            {view.blocks.map((block) => (
+              <BlockRow key={block.id} block={block} />
             ))}
-          </ol>
+          </ul>
         </section>
       )}
 
