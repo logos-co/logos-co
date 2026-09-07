@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { parseNodeStatus } from '@/lib/cryptarchia'
+import { parseBlock, parseChainTime, parseNodeStatus } from '@/lib/cryptarchia'
 
 /**
  * Reads the Logos Blockchain testnet nodes.
@@ -10,13 +10,16 @@ import { parseNodeStatus } from '@/lib/cryptarchia'
  * app is HTTPS, and browsers block that as mixed content before the request
  * leaves the page. That, not CORS, is why this route exists.
  *
- * It is read-only. `/mempool/add/tx` answers 405 to a GET and is the only
- * write surface the nodes expose; nothing here goes near it.
+ * It is read-only. The nodes expose write surfaces (`/mempool/add/tx`, the
+ * wallet and SDP routes); nothing here goes near them.
  */
 
 /** From `deployment/.env.testnet` in logos-blockchain: PUBLIC_IP_ADDR + node API ports. */
 const NODE_HOST = 'http://65.109.51.37'
 const NODE_PORTS = [18080, 18081, 18082, 18083] as const
+
+/** How many recent blocks to resolve. Each one is a request, so this is kept small. */
+const BLOCK_LIMIT = 12
 
 /** Someone else's testnet, so answers are shared rather than fetched per visitor. */
 const CACHE_SECONDS = 10
@@ -31,7 +34,15 @@ async function getJson(url: string): Promise<unknown> {
   return response.json()
 }
 
-/** One node's chain and network state. Returns null when it does not answer. */
+/** Anything optional: a testnet endpoint going quiet must not fail the page. */
+async function tryJson(url: string): Promise<unknown> {
+  try {
+    return await getJson(url)
+  } catch {
+    return null
+  }
+}
+
 async function readNode(port: number) {
   try {
     const [info, network] = await Promise.all([
@@ -40,16 +51,22 @@ async function readNode(port: number) {
     ])
     return parseNodeStatus({ info, network }, `:${port}`)
   } catch {
-    // One node being unreachable is normal on a testnet and must not take the
-    // whole view down with it.
+    // One node being unreachable is normal on a testnet.
     return null
   }
 }
 
 export async function GET() {
-  const settled = await Promise.all(NODE_PORTS.map(readNode))
-  const nodes = settled.filter((node) => node !== null)
+  const lead = `${NODE_HOST}:${NODE_PORTS[0]}`
 
+  const [statuses, rawHeaders, rawTime, rawMempool] = await Promise.all([
+    Promise.all(NODE_PORTS.map(readNode)),
+    tryJson(`${lead}/cryptarchia/headers`),
+    tryJson(`${lead}/time/info`),
+    tryJson(`${lead}/mempool/view`),
+  ])
+
+  const nodes = statuses.filter((node) => node !== null)
   if (nodes.length === 0) {
     return NextResponse.json(
       { error: 'No testnet node answered.' },
@@ -57,19 +74,33 @@ export async function GET() {
     )
   }
 
-  // The header chain is the same on every node that agrees, so one is enough.
-  let headers: string[] = []
-  try {
-    const raw = await getJson(`${NODE_HOST}:${NODE_PORTS[0]}/cryptarchia/headers`)
-    if (Array.isArray(raw)) {
-      headers = raw.filter((h): h is string => typeof h === 'string')
-    }
-  } catch {
-    // The status view is still worth showing without the header list.
-  }
+  const time = parseChainTime(rawTime)
+
+  // Headers arrive newest first and each block's parent is the next one, so
+  // this walks the chain. Only the visible slice is resolved: the node has no
+  // working slot-range query, so every block is its own request.
+  const headers = Array.isArray(rawHeaders)
+    ? rawHeaders.filter((h): h is string => typeof h === 'string')
+    : []
+
+  const blocks = (
+    await Promise.all(
+      headers.slice(0, BLOCK_LIMIT).map(async (id) => {
+        const raw = await tryJson(`${lead}/cryptarchia/blocks/${id}`)
+        return raw ? parseBlock(raw, time) : null
+      }),
+    )
+  ).filter((block) => block !== null)
 
   return NextResponse.json(
-    { nodes, headers, fetchedAt: Date.now() },
+    {
+      nodes,
+      blocks,
+      headerCount: headers.length,
+      mempoolSize: Array.isArray(rawMempool) ? rawMempool.length : 0,
+      time,
+      fetchedAt: Date.now(),
+    },
     {
       headers: {
         'Cache-Control': `public, max-age=0, s-maxage=${CACHE_SECONDS}`,
