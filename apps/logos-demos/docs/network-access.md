@@ -55,60 +55,47 @@ would change it.
 
 ## Blockchain
 
-### LEZ block explorer — public
+### Testnet nodes — public, and what the demo uses
 
-**https://explorer.testnet.lez.logos.co/** is public, needs no login, and works.
-It is a Leptos WASM app. Its API is a set of Leptos server functions whose paths
-carry a hash suffix; extract them from the WASM with `strings`:
+`deployment/.env.testnet` in `logos-blockchain` names `PUBLIC_IP_ADDR=65.109.51.37`
+with node API ports 18080-18083. **All four are publicly reachable**, checked
+2026-09-07.
 
 ```
-POST /api/get_blocks<hash>
-POST /api/get_block_by_id<hash>      POST /api/get_block_by_hash<hash>
-POST /api/get_transaction<hash>      POST /api/get_account<hash>
-POST /api/get_transactions_by_account<hash>   POST /api/search<hash>
+http://65.109.51.37:18080/cryptarchia/info      chain tip, height, slot, lib, state, phase
+http://65.109.51.37:18080/cryptarchia/headers   121 recent header hashes
+http://65.109.51.37:18080/network/info          peer id, listen addresses, connected peers
+http://65.109.51.37:18080/blend/info            node id, core info
+http://65.109.51.37:18080/mempool/add/tx        405 to a GET; the only write surface
 ```
 
-**The body must be form-encoded.** JSON returns `Args|missing field 'limit'`
-even when the JSON contains `limit`.
+Everything else probed returned 404.
 
-```sh
-curl -X POST https://explorer.testnet.lez.logos.co/api/get_blocks<hash> \
-  -H 'Content-Type: application/x-www-form-urlencoded' -d 'limit=3'
-```
+**They send `access-control-allow-origin: *`**, so a browser is welcome to call
+them. It cannot: they are plain HTTP and the demo is HTTPS, so mixed-content
+blocking stops the request before it leaves the page. That, not CORS, is why
+the demo has a route handler.
 
-Returns real block data: `header` with `block_id`, `prev_block_hash`, `hash`,
-`timestamp`, `signature`, and `body.transactions`.
+**The chain is live.** Measured on 2026-09-07: height moved 7687 to 7709 over
+about forty minutes, a block every 30 to 90 seconds. Note `state: "Online"`
+reports the process, not production, so it says `Online` either way.
 
-The hash suffix is a build artefact of Leptos server functions. **It will change
-when the explorer is rebuilt**, so resolve it at runtime from the WASM rather
-than hard-coding it, or accept that it needs updating.
+`height` and `slot` are Cryptarchia's base-chain counters and unrelated to LEZ
+block numbers.
 
-All seven take form-encoded bodies. Their arguments, discovered from the error
-messages they return when called empty:
+### LEZ block explorer — public, not used
 
-| Function | Arguments |
-| --- | --- |
-| `get_blocks` | `limit` |
-| `get_block_by_id` | `block_id` |
-| `get_block_by_hash` | `block_hash` |
-| `get_transaction` | `tx_hash` |
-| `get_account` | `account_id` |
-| `get_transactions_by_account` | `account_id`, `offset`, `limit` |
-| `search` | `query` |
+**https://explorer.testnet.lez.logos.co/** is public and works. The demo used
+it before moving to the nodes, and it is still the only way to see LEZ
+execution-zone blocks.
 
-`search` returns `{blocks, transactions, accounts}` and works out for itself
-whether a query is a block id, a transaction hash or an account address. Note
-its accounts arrive as `[id, account]` tuples, while `get_account` returns the
-account alone.
+It is a Leptos WASM app whose API is server functions with a build hash in the
+path, recoverable from the WASM with `strings`. Bodies must be form-encoded;
+JSON returns `Args|missing field 'limit'`. It sends **no CORS headers**, and
+`OPTIONS` returns 405.
 
-**No CORS.** `OPTIONS` on a server function returns `405 Method Not Allowed`
-with no `Access-Control-Allow-Origin`, so a browser on another origin cannot
-call it. Server-to-server calls are unaffected, which is why the demo proxies
-through a route handler. See [browser-viability.md](./browser-viability.md).
-
-**The chain was stalled when checked.** The newest block was 30017 at
-`2026-08-30 09:55:07 UTC`, five days before this was written. Confirm the chain
-is producing blocks before presenting a live view of it.
+Its index was last updated 30 August, showing LEZ block 30017, while the base
+chain has kept producing. A stale LEZ indexer is not a stalled chain.
 
 ### Other blockchain endpoints — not public
 

@@ -40,7 +40,7 @@ A demo that looks unlike logos.co is a bug, however well it works.
 | --- | --- |
 | `/` | Lists the demos. Nothing else. |
 | `/messaging` | **Logos Messaging** — the browser as a light node, joining the peer-to-peer network directly and exchanging messages with other browsers. |
-| `/blockchain` | **Logos Blockchain** — recent blocks from the live LEZ testnet, read through the public explorer via a proxy in this app. |
+| `/blockchain` | **Logos Blockchain** — live consensus state read from the testnet nodes: chain tip, finality, and each node's peers. |
 
 Demos live in a sidebar shell, so a visitor moves between them by clicking. The
 catalogue in `src/demos/registry.ts` drives the sidebar, the overview list, and

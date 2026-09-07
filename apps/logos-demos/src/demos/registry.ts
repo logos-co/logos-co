@@ -24,9 +24,9 @@ export const DEMOS: readonly Demo[] = [
   {
     href: '/blockchain',
     label: 'Logos Blockchain',
-    stack: 'LEZ',
+    stack: 'Cryptarchia',
     summary:
-      'Recent blocks from the live Logos Execution Zone testnet, read through the public block explorer.',
+      'Live consensus state read from the Logos Blockchain testnet nodes: chain tip, finality, and who each node is connected to.',
   },
 ]
 

@@ -7,7 +7,7 @@ The constraint that shapes every demo in this app. Checked 2026-09-04.
 | Protocol | Browser-native? | What it takes |
 | --- | --- | --- |
 | Messaging | **Yes** | `@waku/sdk` light node over secure websockets. Nothing else |
-| Blockchain | Read-only, **via a proxy** | The explorer API works but sends no CORS headers |
+| Blockchain | Read-only, **via a proxy** | Nodes allow browsers, but are HTTP while the app is HTTPS |
 | Storage | **No** | No browser transport and no public endpoint. Needs a node we run |
 
 ## Messaging — genuinely browser-native
@@ -22,35 +22,27 @@ that makes the strongest claim. Two things had to be true at once: a browser
 implementation exists, and there is a public fleet speaking a transport browsers
 can use. Neither holds for the other two.
 
-## Blockchain — read-only through a proxy
+## Blockchain — read-only through a proxy, for an unexpected reason
 
-The explorer API returns real block data but rejects cross-origin browser calls:
-`OPTIONS` gives `405` and no `Access-Control-Allow-Origin`.
+The testnet nodes are public and send `access-control-allow-origin: *`, so
+permission is not the obstacle. **They are served over plain HTTP while the
+demo is HTTPS**, and a browser blocks mixed content before the request is
+sent. The CORS header never gets a chance to matter.
 
-Two ways forward:
+So a route handler makes the call server side. If the nodes were ever put
+behind TLS, that handler could be deleted and the page would talk to them
+directly, which would put this demo in the same category as messaging.
 
-1. **Ask for CORS.** One header on the explorer's nginx and the browser can call
-   it directly, keeping the "no backend" claim intact for this demo too. This is
-   a small request, but it depends on someone else.
-2. **Proxy through a route handler.** A Next.js route handler calls the explorer
-   server-side, where CORS does not apply, and returns the result to the page.
-   This works today with nobody's permission.
+The proxy stays narrow: public chain state, read only, no keys and no writes.
+The nodes expose exactly one write surface, `/mempool/add/tx`, and nothing
+goes near it.
 
-The proxy is the pragmatic choice, but **it changes what the demo can claim**.
-The page must not say "no backend" for a demo whose data comes through our
-server. Scope the claim per demo rather than app-wide:
-
-- Messaging: no backend, and that is literally true.
-- Blockchain: a read-only view relayed through our proxy, because the explorer
-  does not allow browsers to call it directly.
-
-The risk is low, and worth stating plainly so nobody has to guess: the proxied
-data is public block data, there are no keys, no user content, and no writes.
-Keep it that way. A proxy that starts forwarding anything user-specific is a
-different thing and needs a different conversation.
-
-Also note the chain was not producing blocks when this was written, so confirm
-it is live before building a view that implies motion.
+An earlier version of this demo read the LEZ block explorer instead. That was
+a worse arrangement in two ways. The explorer sends no CORS headers at all, so
+the proxy was unavoidable rather than incidental, and its server-function URLs
+carry a build hash that moves on every deploy. Reading the nodes is
+first-hand, and it turned out the base chain was producing normally while the
+explorer's index had been stuck since 30 August.
 
 ## Storage — not possible from a browser at all
 

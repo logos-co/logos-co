@@ -57,18 +57,25 @@ Copy is still British English and still English-only in committed files.
 - Import `@waku/sdk` lazily, inside an effect (`await import('@waku/sdk')`). It reaches for browser APIs that do not exist during server rendering, and it pulls in libp2p, which does not belong in the initial bundle.
 - Validate everything arriving off the wire before rendering it. Topics are public and other applications may publish there.
 
-## Proxied data is normalised twice, so parse the right shape
+## Proxied data is normalised, so parse the right shape
 
-The blockchain routes normalise the explorer's payload before answering, which means there are **two shapes for the same record** and two sets of parsers in `src/lib/blockchain.ts`:
+`/api/chain` normalises what the nodes return before answering, which means there are **two shapes for the same record** and two parsers in `src/lib/cryptarchia.ts`:
 
-- `parseBlock` / `parseTransaction` / `parseSearchResults` take the **explorer's** shape. Only route handlers use them.
-- `parseSummary` / `parseTransactionSummaries` / `parseSearchPayload` take the **normalised** shape. Only client code uses them.
+- `parseNodeStatus` takes the **node's** shape. Only the route handler uses it.
+- `parseChainView` takes the **normalised** shape. Only client code uses it.
 
-Using the wrong one is silent. There is no type error, because both take `unknown`, and no runtime error, because a parser that finds no fields returns null and the row is dropped. The list simply comes out empty. This has already happened twice: once on accounts, once on an account's transactions.
+Using the wrong one is silent. There is no type error, because both take `unknown`, and no runtime error, because a parser that finds no fields returns null and the row is dropped. The list simply comes out empty. This happened twice on the previous explorer-based version.
 
-**If a list renders empty while its route returns data, check this first.**
+**If a panel renders empty while its route returns data, check this first.**
 
-Two explorer shapes worth knowing while you are here. Accounts come back from `search` as `[id, account]` tuples but from `get_account` as the account alone. Transactions are an externally tagged enum, `{ "Public": { ... } }`, so the variant name is kept rather than unwrapped: `Public` is all this testnet shows today, and a private variant is the entire point of the chain.
+## Blockchain Notes
+
+- The nodes come from `deployment/.env.testnet` in `logos-blockchain`: `PUBLIC_IP_ADDR` with API ports 18080-18083. They are public and send `access-control-allow-origin: *`.
+- **The route handler exists because of mixed content, not CORS.** The nodes are plain HTTP and this app is HTTPS, so a browser blocks the request before it is sent. If the nodes ever get TLS, delete the route and call them from the page.
+- `state: "Online"` means the process is up, not that blocks are being produced. Liveness is measured by watching when the height last changed.
+- Measured cadence is a block every 30 to 90 seconds. Anything poll-count based flaps between normal blocks, so the stall threshold is time-based and set well above the longest observed gap.
+- Cryptarchia's `height` and `slot` are the base chain's own counters. They are unrelated to LEZ block numbers, which come from a different layer and a separate indexer.
+- One unreachable node must not take the view down. `/api/chain` drops it and renders the rest.
 
 ## Messaging Notes
 
