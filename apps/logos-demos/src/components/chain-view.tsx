@@ -1,8 +1,10 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 import { useChain } from '@/components/use-chain'
+import { useChainStream } from '@/components/use-chain-stream'
 import type { Block, NodeStatus } from '@/lib/cryptarchia'
 import {
   finalityGap,
@@ -109,7 +111,7 @@ function NodeCard({ node }: { node: NodeStatus }) {
  * by a private lottery, so a block shows that its author won without saying
  * who they are.
  */
-function BlockRow({ block }: { block: Block }) {
+function BlockRow({ block, isLive }: { block: Block; isLive?: boolean }) {
   return (
     <li className="border-t border-gray-01 first:border-t-0">
       <details>
@@ -117,6 +119,11 @@ function BlockRow({ block }: { block: Block }) {
           <span className="text-h4-sans w-28 shrink-0 text-brand-dark-green">
             {block.slot}
           </span>
+          {isLive && (
+            <span className="text-caption-sans text-accent-steel-teal">
+              arrived live
+            </span>
+          )}
           <span className="text-mono-s flex-1 break-all text-gray-06">
             {shortenHash(block.id)}
           </span>
@@ -132,8 +139,13 @@ function BlockRow({ block }: { block: Block }) {
         <dl className="flex flex-col gap-3 border-t border-gray-01 px-4 py-4">
           <div className="flex flex-col gap-1">
             <dt className="text-eyebrow text-gray-05">Block id</dt>
-            <dd className="text-mono-s break-all text-brand-dark-green">
-              {block.id}
+            <dd className="text-mono-s break-all">
+              <Link
+                href={`/blockchain/block/${block.id}`}
+                className="cursor-pointer text-brand-dark-green underline decoration-gray-02 underline-offset-2 hover:decoration-brand-dark-green"
+              >
+                {block.id}
+              </Link>
             </dd>
           </div>
           <div className="flex flex-col gap-1">
@@ -170,7 +182,16 @@ function BlockRow({ block }: { block: Block }) {
 
 export function ChainView() {
   const { view, heightChangedAt, isLoading, error } = useChain()
+  const { blocks: streamed, isLive } = useChainStream(view?.time ?? null)
   const lead = view?.nodes[0] ?? null
+
+  // Streamed blocks arrive before the next poll, so they go in front and the
+  // polled list fills in behind them without repeating anything.
+  const streamedIds = new Set(streamed.map((block) => block.id))
+  const merged = [
+    ...streamed,
+    ...(view?.blocks ?? []).filter((block) => !streamedIds.has(block.id)),
+  ]
 
   return (
     <div className="flex flex-col gap-6">
@@ -239,22 +260,39 @@ export function ChainView() {
         </section>
       )}
 
-      {view && view.blocks.length > 0 && (
+      {view && merged.length > 0 && (
         <section className="flex flex-col gap-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-eyebrow text-gray-05">
-              Recent blocks ({view.blocks.length} of {view.headerCount})
+              Recent blocks ({merged.length} of {view.headerCount})
             </h2>
-            <span className="text-caption-sans text-gray-05">
-              {view.mempoolSize === 0
-                ? 'mempool empty'
-                : `${view.mempoolSize} in mempool`}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-caption-sans text-gray-05">
+                {view.mempoolSize === 0
+                  ? 'mempool empty'
+                  : `${view.mempoolSize} in mempool`}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className={`size-2 rounded-full ${
+                    isLive ? 'animate-pulse bg-accent-steel-teal' : 'bg-gray-02'
+                  }`}
+                />
+                <span className="text-caption-sans text-gray-05">
+                  {isLive ? 'streaming' : 'reconnecting'}
+                </span>
+              </span>
+            </div>
           </div>
 
           <ul className="flex flex-col border border-gray-01 bg-white">
-            {view.blocks.map((block) => (
-              <BlockRow key={block.id} block={block} />
+            {merged.map((block) => (
+              <BlockRow
+                key={block.id}
+                block={block}
+                isLive={streamedIds.has(block.id)}
+              />
             ))}
           </ul>
         </section>
