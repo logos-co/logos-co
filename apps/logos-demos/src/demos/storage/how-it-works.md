@@ -1,9 +1,12 @@
 ## What this is, and what it is not
 
-This shows **who runs the Logos Storage network**, read live from the roster
-the project publishes. It does not store anything, and there is nothing here to
-upload a file to. That limit is worth stating plainly, because a storage demo
-that cannot store looks like a broken one until you know why.
+This page does two things. It gives a file **the exact address Logos Storage
+would give it**, worked out here in the browser. And it shows **who runs the
+network**, read from the roster the project publishes.
+
+What it does not do is put your file on that network. Nothing here can. That
+limit is worth stating plainly, because a storage demo that cannot store looks
+like a broken one until you know why.
 
 ## Why you cannot upload
 
@@ -34,6 +37,36 @@ Nor is there a public node to call instead. Twelve nodes were checked across
 both fleets and every one refuses a connection on its API port, which is the
 design rather than an oversight: the storage documentation is entirely about
 running your own node.
+
+## What this page can actually do
+
+A CID is not something the network hands out. It is a pure function of the
+bytes, so the same file has the same address everywhere, forever. That part a
+browser can do in full, and this page does: it chunks the file into 64 KiB
+blocks, pads the last one, hashes each, folds them into a merkle tree, builds
+the manifest, and hashes that.
+
+The result is checked, not asserted. A real node (v0.4.5, the published
+binary) was run locally and fed the same inputs, and its answers are the
+fixtures in `storage-cid.test.ts`. Ten cases, including the odd block counts
+where the tree's key byte changes, and the file never leaves your tab.
+
+```mermaid
+flowchart LR
+  file[Your file] --> blocks[64 KiB blocks]
+  blocks --> leaves[sha256 each]
+  leaves --> tree[Merkle tree]
+  tree --> manifest[Manifest]
+  manifest --> cid[CID]
+```
+
+## The shareable link
+
+The link the page hands back is served from this app's own store. Logos
+Storage cannot hold it, for the reasons above. What carries over is the
+address: the CID is the network's, and opening the link re-hashes what arrives
+and checks it against the CID in the URL, so the host does not have to be
+trusted.
 
 ## What is live
 

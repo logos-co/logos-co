@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 
+import { useNodeProbes, type NodeProbe } from '@/components/use-node-probes'
 import { useStorageFleet } from '@/components/use-storage-fleet'
 import type { FleetName, StorageNode } from '@/lib/storage-fleet'
 import {
@@ -20,22 +21,47 @@ function Field({ label, value }: { label: string; value: string }) {
   )
 }
 
-function NodeCard({ node }: { node: StorageNode }) {
+/**
+ * Reachability as checked by echo.codex.storage, which sits outside the source
+ * filter these nodes apply. A browser sees `refused` for the same port, so the
+ * answer here is about the node, not about the viewer.
+ */
+function Reachability({ isReachable }: { isReachable: boolean | null }) {
+  if (isReachable === null) return <span className="text-gray-05">checking…</span>
+  return (
+    <span className={isReachable ? 'text-brand-dark-green' : 'text-gray-05'}>
+      {isReachable ? 'answering' : 'no answer'}
+    </span>
+  )
+}
+
+function NodeCard({ node, probe }: { node: StorageNode; probe?: NodeProbe }) {
+  const location = probe?.location
+  const place = location
+    ? [location.city, location.country].filter(Boolean).join(', ')
+    : 'locating…'
+
   return (
     <article className="flex flex-col gap-3 border border-gray-01 bg-white p-4">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-h4-sans text-brand-dark-green">{node.name}</span>
-        <span className="text-caption-sans text-gray-05">
-          role {node.role}
-        </span>
+        <span className="text-caption-sans text-gray-05">role {node.role}</span>
       </div>
       <dl className="flex flex-col gap-2">
+        <Field label="Located" value={place} />
+        <Field label="Network" value={location?.asnOrg || '—'} />
         <Field label="Peer id" value={shortenKey(node.peerId)} />
         <Field label="Address" value={`${node.address}:${node.port}`} />
         <Field
           label="Mix relay"
           value={node.mixPubKey ? 'yes' : 'no mix key published'}
         />
+        <div className="flex flex-col gap-0.5">
+          <dt className="text-eyebrow text-gray-05">Port {node.port}</dt>
+          <dd className="text-mono-s">
+            <Reachability isReachable={probe?.isReachable ?? null} />
+          </dd>
+        </div>
       </dl>
     </article>
   )
@@ -44,6 +70,7 @@ function NodeCard({ node }: { node: StorageNode }) {
 export function StorageNetwork() {
   const [fleet, setFleet] = useState<FleetName>('logos-test')
   const { nodes, isLoading, error } = useStorageFleet(fleet)
+  const probes = useNodeProbes(nodes)
 
   const regions = groupByRegion(nodes)
   const roles = countByRole(nodes)
@@ -116,7 +143,7 @@ export function StorageNetwork() {
               </h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 {group.map((node) => (
-                  <NodeCard key={node.host} node={node} />
+                  <NodeCard key={node.host} node={node} probe={probes[node.host]} />
                 ))}
               </div>
             </section>

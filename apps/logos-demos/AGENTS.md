@@ -76,6 +76,12 @@ A missing `access-control-allow-origin` header looks exactly like a success in a
 
 **Open the page and read the console before writing down that something works from a browser.**
 
+## Verify protocol code against the real implementation
+
+`src/lib/storage-cid.ts` reimplements a piece of logos-storage-nim. Its tests do not check it against itself — the fixtures are a real node's answers, obtained by downloading the published binary and uploading each input. See docs/storage-cid.md.
+
+Do the same for anything that reimplements a protocol. A self-consistent test proves the code agrees with itself, which is exactly the thing that was never in doubt. Prebuilt binaries and stored artefacts on disk beat guessing: when the manifest encoding was wrong, `xxd` on the node's own manifest file named the field in seconds.
+
 ## Blockchain Notes
 
 - The nodes come from `deployment/.env.testnet` in `logos-blockchain`: `PUBLIC_IP_ADDR` with API ports 18080-18083. They are public and send `access-control-allow-origin: *`.
@@ -103,6 +109,7 @@ pnpm turbo run build --filter=logos-demos
 pnpm --filter logos-demos lint
 pnpm --filter logos-demos lint:fix
 pnpm --filter logos-demos check-types
+pnpm --filter logos-demos test
 ```
 
 Build through turbo, never `pnpm --filter logos-demos build`: `@acid-info/logos-ui` is a build dependency and only the orchestrator builds it, so the app build alone fails on a clean checkout. Vercel runs the turbo command via `vercel.json`.
