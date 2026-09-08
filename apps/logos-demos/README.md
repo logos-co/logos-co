@@ -40,13 +40,12 @@ A demo that looks unlike logos.co is a bug, however well it works.
 
 ## Demos
 
-| Route              | What it shows                                                                                                                             |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                | Lists the demos. Nothing else.                                                                                                            |
-| `/messaging`       | **Logos Messaging** — the browser as a light node, joining the peer-to-peer network directly and exchanging messages with other browsers. |
-| `/blockchain`      | **Logos Blockchain** — live blocks and consensus state from the testnet nodes, including each block's proof of leadership.                |
-| `/storage`         | **Logos Storage** — the address the network would give a file, worked out in the browser, plus the live roster of nodes.                  |
-| `/storage/c/<cid>` | A published file, opened by its content address and checked against it.                                                                   |
+| Route         | What it shows                                                                                                                             |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`           | Lists the demos. Nothing else.                                                                                                            |
+| `/messaging`  | **Logos Messaging** — the browser as a light node, joining the peer-to-peer network directly and exchanging messages with other browsers. |
+| `/blockchain` | **Logos Blockchain** — live blocks and consensus state from the testnet nodes, including each block's proof of leadership.                |
+| `/storage`    | **Logos Storage** — the address the network would give a file, worked out in the browser, plus the live roster of nodes.                  |
 
 Demos live in a sidebar shell, so a visitor moves between them by clicking. The
 catalogue in `src/demos/registry.ts` drives the sidebar, the overview list, and
@@ -69,8 +68,12 @@ to change.
 
 What the storage demo does instead is the part that needs no node: a CID is a
 pure function of the bytes, so the address the network _would_ give a file can
-be worked out in the page, and is. Publishing a shared link puts the bytes in
-this app's own store, which both the page and its explainer say plainly.
+be worked out in the page, and is. The file is read in the tab and goes nowhere.
+
+**Nothing here stands in for the network.** An earlier version published files
+to this app's own object store so a link could be shared. It worked, and it was
+labelled, but it put a demo of somebody else's storage under a Logos Storage
+heading. It has been removed and the store deleted.
 
 [`docs/browser-viability.md`](./docs/browser-viability.md) and
 [`docs/storage-research.md`](./docs/storage-research.md) record what was checked
@@ -92,10 +95,6 @@ exist, it is because the browser is not allowed to make the call: the testnet
 nodes are plain HTTP while this app is HTTPS (`src/app/api/chain/`), and the
 storage roster sends no CORS header (`src/app/api/storage/fleet/`). Each demo
 page says which of the two it is.
-
-One route handler is not a proxy: `src/app/api/storage/content/` stores a file
-so its CID can be opened from another browser. That is this app's own store,
-not Logos Storage, and it says so.
 
 It also rules out the alternative. `logos-js-sdk` binds the native
 `liblogos_protocol` through koffi and dials a long-lived `logoscore` daemon, so
@@ -136,13 +135,12 @@ running the published binary locally and uploading each input, so they fail if
 the implementation drifts from the network. A test that only agrees with itself
 would never catch that. See [`docs/storage-cid.md`](./docs/storage-cid.md).
 
-`test:e2e` runs Playwright over the flows a person actually takes. Point it at a
-deployment with `E2E_BASE_URL=<url>`, which is worth doing before calling a fix
-done: both share bugs so far appeared only on a real build. It covers: a real file
-through a real file input, the CID on screen, and a shared link opened as a
-fresh page and verified. It also checks that every page still carries a title,
-a description and a share card. The share tests skip themselves when no store
-is configured.
+`test:e2e` runs Playwright over the flows a person actually takes: a real file
+through a real file input, and the address the page works out for it. It also
+checks that every page carries a title, a description and a share card, and
+that nothing renders below 14px. Point it at a deployment with
+`E2E_BASE_URL=<url>`, which is worth doing before calling a fix done, because
+more than one bug here only appeared on a real build.
 
 ## Deployment
 

@@ -1,12 +1,13 @@
 ## What this is, and what it is not
 
-This page does two things. It gives a file **the exact address Logos Storage
-would give it**, worked out here in the browser. And it shows **who runs the
-network**, read from the roster the project publishes.
+This page does two things, and both are Logos Storage. It gives a file **the
+exact address the network would give it**, worked out here in the browser. And
+it shows **who runs the network**, read from the roster the project publishes.
 
-What it does not do is put your file on that network. Nothing here can. That
-limit is worth stating plainly, because a storage demo that cannot store looks
-like a broken one until you know why.
+It does not store your file, here or anywhere. Nothing on this page uploads
+anything, and your file never leaves the tab. That limit is worth stating
+plainly, because a storage demo that cannot store looks like a broken one until
+you know why.
 
 ## Why you cannot upload
 
@@ -67,14 +68,6 @@ known file types and refuses anything it cannot place — and `text/markdown`,
 which browsers report for every `.md` file, is one of those. Uploading with no
 type at all is allowed, and the manifest then records none. So for those files
 the page shows the CID for that upload, and says which type was refused.
-
-## The shareable link
-
-The link the page hands back is served from this app's own store. Logos
-Storage cannot hold it, for the reasons above. What carries over is the
-address: the CID is the network's, and opening the link re-hashes what arrives
-and checks it against the CID in the URL, so the host does not have to be
-trusted.
 
 ## What is live
 

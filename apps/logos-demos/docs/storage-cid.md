@@ -106,6 +106,9 @@ was wrong when the test's expectation was.
 
 ## What this does not do
 
-It does not store anything. See [storage-research.md](./storage-research.md).
-The shareable link the demo offers is served from this app's own store, and
-both the page and the explainer say so.
+It does not store anything, and neither does anything else in this app. See
+[storage-research.md](./storage-research.md) for what was checked.
+
+The demo briefly published files to an object store of our own so a link could
+be shared. That was removed: a demo of somebody else's storage does not belong
+under a Logos Storage heading, however well labelled.

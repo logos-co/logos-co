@@ -17,7 +17,6 @@
   "dependencies": {
     "@acid-info/logos-tokens": "workspace:*",
     "@acid-info/logos-ui": "workspace:*",
-    "@vercel/blob": "^2.8.0",
     "@waku/sdk": "^0.0.36",
     "mermaid": "^11.17.2",
     "next": "16.2.4",
