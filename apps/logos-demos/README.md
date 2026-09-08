@@ -36,11 +36,13 @@ A demo that looks unlike logos.co is a bug, however well it works.
 
 ## Demos
 
-| Route | What it shows |
-| --- | --- |
-| `/` | Lists the demos. Nothing else. |
-| `/messaging` | **Logos Messaging** — the browser as a light node, joining the peer-to-peer network directly and exchanging messages with other browsers. |
-| `/blockchain` | **Logos Blockchain** — live blocks and consensus state from the testnet nodes, including each block's proof of leadership. |
+| Route              | What it shows                                                                                                                             |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                | Lists the demos. Nothing else.                                                                                                            |
+| `/messaging`       | **Logos Messaging** — the browser as a light node, joining the peer-to-peer network directly and exchanging messages with other browsers. |
+| `/blockchain`      | **Logos Blockchain** — live blocks and consensus state from the testnet nodes, including each block's proof of leadership.                |
+| `/storage`         | **Logos Storage** — the address the network would give a file, worked out in the browser, plus the live roster of nodes.                  |
+| `/storage/c/<cid>` | A published file, opened by its content address and checked against it.                                                                   |
 
 Demos live in a sidebar shell, so a visitor moves between them by clicking. The
 catalogue in `src/demos/registry.ts` drives the sidebar, the overview list, and
@@ -55,15 +57,20 @@ the detail is there for anyone who wants it.
 
 ## What is not here
 
-**Logos Storage has no demo, and cannot have one while this app is Vercel only.**
-A browser cannot join the storage network (discovery is discv5 over UDP,
-transfer is libp2p TCP, and there is no websocket transport), and no public
-gateway exists to call instead. That is a design choice on the storage side
-rather than an oversight, and it needs a node we run to change.
+**Nothing is stored on the Logos Storage network.** A browser cannot join it —
+discovery is discv5 over UDP, transfer is libp2p TCP, and there is no websocket
+transport — and no public gateway exists to call instead. That is a design
+choice on the storage side rather than an oversight, and it needs a node we run
+to change.
 
-[`docs/browser-viability.md`](./docs/browser-viability.md) records what was
-checked and what would unlock it, so the question does not have to be
-re-investigated from scratch.
+What the storage demo does instead is the part that needs no node: a CID is a
+pure function of the bytes, so the address the network _would_ give a file can
+be worked out in the page, and is. Publishing a shared link puts the bytes in
+this app's own store, which both the page and its explainer say plainly.
+
+[`docs/browser-viability.md`](./docs/browser-viability.md) and
+[`docs/storage-research.md`](./docs/storage-research.md) record what was checked
+and what would unlock the rest.
 
 ## Architecture
 
@@ -75,11 +82,16 @@ Copy uses the Logos vocabulary: **Logos Messaging** for the stack area, with
 **Delivery** and **Chat** as its modules. "Waku" is not used in anything a
 visitor reads; library names keep their own names.
 
-That is why every page here is prerendered as static content. The messaging
-demo has no server in its path at all. The blockchain demo is the exception:
-the block explorer sends no CORS headers, so a read-only proxy under
-`src/app/api/blockchain/` makes that call server side, and the demo page says
-so.
+That is why every page here is prerendered as static content, and why the
+messaging demo has no server in its path at all. Where a route handler does
+exist, it is because the browser is not allowed to make the call: the testnet
+nodes are plain HTTP while this app is HTTPS (`src/app/api/chain/`), and the
+storage roster sends no CORS header (`src/app/api/storage/fleet/`). Each demo
+page says which of the two it is.
+
+One route handler is not a proxy: `src/app/api/storage/content/` stores a file
+so its CID can be opened from another browser. That is this app's own store,
+not Logos Storage, and it says so.
 
 It also rules out the alternative. `logos-js-sdk` binds the native
 `liblogos_protocol` through koffi and dials a long-lived `logoscore` daemon, so
@@ -105,10 +117,26 @@ pnpm --filter logos-demos dev
 pnpm turbo run build --filter=logos-demos
 pnpm --filter logos-demos lint
 pnpm --filter logos-demos check-types
+pnpm --filter logos-demos test
+pnpm --filter logos-demos test:e2e
 ```
 
 Build through turbo: `@acid-info/logos-ui` is a build dependency and only the
 orchestrator builds it, so the app build alone fails on a clean checkout.
+
+## Tests
+
+`test` runs the unit tests, which are pure functions only. The CID ones matter
+most: their fixtures are a **real Logos Storage node's answers**, obtained by
+running the published binary locally and uploading each input, so they fail if
+the implementation drifts from the network. A test that only agrees with itself
+would never catch that. See [`docs/storage-cid.md`](./docs/storage-cid.md).
+
+`test:e2e` runs Playwright over the flows a person actually takes: a real file
+through a real file input, the CID on screen, and a shared link opened as a
+fresh page and verified. It also checks that every page still carries a title,
+a description and a share card. The share tests skip themselves when no store
+is configured.
 
 ## Deployment
 

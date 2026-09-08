@@ -2,9 +2,12 @@ import { ChainSearch } from '@/components/chain-search'
 import { ChainView } from '@/components/chain-view'
 import { LearnMoreButton } from '@/components/learn-more-button'
 import { readExplainer } from '@/demos/explainer'
+import { demoMetadata } from '@/demos/metadata'
 import { findDemo } from '@/demos/registry'
 
 const DEMO_HREF = '/blockchain'
+
+export const metadata = demoMetadata(DEMO_HREF)
 
 export default function Page() {
   const demo = findDemo(DEMO_HREF)

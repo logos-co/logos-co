@@ -33,7 +33,7 @@ export const DEMOS: readonly Demo[] = [
     label: 'Logos Storage',
     stack: 'Network',
     summary:
-      'The live roster of nodes running the Logos Storage network, read straight from the published fleet list.',
+      'Work out the address Logos Storage would give a file, in the browser, and see the live roster of nodes running the network.',
   },
 ]
 

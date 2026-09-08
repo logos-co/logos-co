@@ -1,9 +1,12 @@
 import { ChatRoom } from '@/components/chat-room'
 import { LearnMoreButton } from '@/components/learn-more-button'
 import { readExplainer } from '@/demos/explainer'
+import { demoMetadata } from '@/demos/metadata'
 import { findDemo } from '@/demos/registry'
 
 const DEMO_HREF = '/messaging'
+
+export const metadata = demoMetadata(DEMO_HREF)
 
 export default function Page() {
   const demo = findDemo(DEMO_HREF)
