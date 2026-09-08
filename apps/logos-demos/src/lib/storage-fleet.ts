@@ -17,7 +17,8 @@ export const FLEET_URL = (fleet: FleetName) =>
   `https://fleets.logos.co/${fleet}/storage-network.json`
 
 /** What the page fetches. */
-export const FLEET_API = (fleet: FleetName) => `/api/storage/fleet?fleet=${fleet}`
+export const FLEET_API = (fleet: FleetName) =>
+  `/api/storage/fleet?fleet=${fleet}`
 
 export type StorageNode = {
   /** Full host, e.g. `node-01.do-ams3.logos.test`. */
@@ -46,15 +47,44 @@ export type StorageNode = {
 const text = (value: unknown) => (typeof value === 'string' ? value : '')
 
 /**
+ * A port, or null if the value is not one.
+ *
+ * The roster publishes numbers today. A numeric string is accepted too, so a
+ * change of encoding upstream degrades to nothing rather than emptying the
+ * whole list at once.
+ */
+function parsePort(value: unknown): number | null {
+  const port =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string' && value.trim() !== ''
+        ? Number(value)
+        : NaN
+
+  if (!Number.isInteger(port) || port < 1 || port > 65535) return null
+  return port
+}
+
+/**
  * Validate one entry. The roster is served by infrastructure we do not control,
  * so an entry that does not match the shape is dropped rather than rendered.
+ *
+ * `host`, `peerId`, `address` and `port` are all required: they are what makes
+ * an entry a node you could identify and reach. Without them the card would
+ * render blanks and a `:0` address, and the liveness probes would fire at
+ * nothing. `role` and the keys are descriptive, so a missing one is shown as
+ * missing instead of losing the whole node.
  */
 export function parseNode(raw: unknown): StorageNode | null {
   if (typeof raw !== 'object' || raw === null) return null
 
   const node = raw as Record<string, unknown>
   const host = text(node.host)
-  if (!host) return null
+  const peerId = text(node.peerId)
+  const address = text(node.address)
+  const port = parsePort(node.port)
+
+  if (!host || !peerId || !address || port === null) return null
 
   // Hosts are `<name>.<region>.<fleet>`, so the first two segments name the
   // node and where it runs.
@@ -63,11 +93,11 @@ export function parseNode(raw: unknown): StorageNode | null {
   return {
     host,
     name,
-    region,
+    region: region || 'unknown',
     role: text(node.role) || 'unknown',
-    peerId: text(node.peerId),
-    address: text(node.address),
-    port: typeof node.port === 'number' ? node.port : 0,
+    peerId,
+    address,
+    port,
     mixPubKey: text(node.mixPubKey),
     libp2pPubKey: text(node.libp2pPubKey),
     spr: text(node.spr),
@@ -84,7 +114,7 @@ export function parseFleet(raw: unknown): StorageNode[] {
 
 /** Nodes grouped by region, so the geographic spread is visible at a glance. */
 export function groupByRegion(
-  nodes: StorageNode[],
+  nodes: StorageNode[]
 ): { region: string; nodes: StorageNode[] }[] {
   const groups = new Map<string, StorageNode[]>()
   for (const node of nodes) {
