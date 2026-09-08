@@ -88,7 +88,7 @@ export function MermaidDiagram({ source }: { source: string }) {
   // the prose around it carries the same explanation.
   if (hasFailed) {
     return (
-      <pre className="text-mono-s overflow-x-auto border border-gray-01 bg-white p-4 text-gray-06">
+      <pre className="text-mono-body overflow-x-auto border border-gray-01 bg-white p-4 text-gray-06">
         {source}
       </pre>
     )

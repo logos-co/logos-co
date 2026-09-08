@@ -72,15 +72,22 @@ export function useCidCompute() {
       // The node reads the mimetype from the request's Content-Type and the
       // name from Content-Disposition. Both go into the manifest, so both
       // change the CID — a renamed file is a different CID.
-      const reportedMimetype = file.type || 'application/octet-stream'
+      const reportedMimetype = file.type
 
-      // A node refuses a Content-Type it cannot map to a file extension, and
-      // browsers report `text/markdown` for every .md file, which is one of
-      // them. Sending no Content-Type is allowed, though, and the node then
-      // leaves the field out — so that is the upload this CID describes.
-      const mimetype = isAcceptedMimetype(reportedMimetype)
-        ? reportedMimetype
-        : null
+      /**
+       * One rule for the type, so the CID is always explainable.
+       *
+       * Use what the browser reports when a node would accept it, and nothing
+       * otherwise. Both other cases are the same situation, so they get the
+       * same answer: a browser that reports no type at all, and a type the
+       * node refuses because it cannot map it to a file extension, which is
+       * every `.md` file. Uploading with no Content-Type is allowed and the
+       * manifest then records none, so that is the upload this CID describes.
+       */
+      const mimetype =
+        reportedMimetype && isAcceptedMimetype(reportedMimetype)
+          ? reportedMimetype
+          : null
 
       const breakdown = await computeCid(bytes, {
         filename: file.name,

@@ -80,12 +80,12 @@ export function ChatRoom() {
                   className={`flex flex-col ${message.fromSelf ? 'items-end' : ''}`}
                 >
                   <div className="flex items-baseline gap-2">
-                    <span className="text-caption-sans text-gray-06">
+                    <span className="text-body-sans text-gray-06">
                       {message.fromSelf ? 'You' : message.nickname}
                     </span>
                     <time
                       dateTime={new Date(message.sentAt).toISOString()}
-                      className="text-mono-s text-gray-04"
+                      className="text-mono-body text-gray-04"
                     >
                       {formatTime(message.sentAt)}
                     </time>
@@ -142,12 +142,12 @@ export function ChatRoom() {
           </div>
 
           {sendError && (
-            <p role="alert" className="text-caption-sans text-accent-purple">
+            <p role="alert" className="text-body-sans text-accent-purple">
               {sendError}
             </p>
           )}
 
-          <p className="text-mono-s text-gray-04">{CONTENT_TOPIC}</p>
+          <p className="text-mono-body text-gray-04">{CONTENT_TOPIC}</p>
         </form>
       </section>
 

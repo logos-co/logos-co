@@ -44,14 +44,7 @@ export default async function SharedContentPage({ params }: Props) {
   const published = await findPublished(cid)
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
-      <div className="flex flex-col gap-2">
-        <span className="text-eyebrow text-gray-05">
-          Logos Storage · content address
-        </span>
-        <code className="text-mono-s break-all text-gray-06">{cid}</code>
-      </div>
-
+    <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 p-6 py-12">
       {published ? (
         <SharedContent
           cid={cid}
@@ -61,20 +54,26 @@ export default async function SharedContentPage({ params }: Props) {
           size={published.size}
         />
       ) : (
-        <p className="text-body-sans text-gray-06">
-          {isCid(cid)
-            ? 'Nothing is published under that CID here.'
-            : 'That is not a Logos Storage CID.'}
-        </p>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-h3-sans text-brand-dark-green">
+            {isCid(cid) ? 'Nothing here' : 'Not an address'}
+          </h1>
+          <p className="text-body-sans text-gray-06">
+            {isCid(cid)
+              ? 'That is a valid Logos Storage address, but nothing has been published under it here.'
+              : 'That is not a Logos Storage content address.'}
+          </p>
+          <code className="text-mono-body break-all text-gray-05">{cid}</code>
+        </div>
       )}
 
-      <p className="text-caption-sans text-gray-05">
-        The CID is the one Logos Storage would give this file, computed to the
-        network&rsquo;s own spec. The bytes are served from this app&rsquo;s
-        store rather than the network, because no public Logos Storage node
-        accepts uploads.{' '}
+      <p className="text-body-sans border-t border-gray-01 pt-6 text-gray-05">
+        The address above is the one Logos Storage would give this file,
+        computed to the network&rsquo;s own spec. The file itself is served from
+        this app&rsquo;s store rather than the network, because no public Logos
+        Storage node accepts uploads.{' '}
         <Link href="/storage" className="underline">
-          See how the CID is worked out
+          See how the address is worked out
         </Link>
         .
       </p>

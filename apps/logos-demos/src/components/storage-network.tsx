@@ -15,8 +15,8 @@ import {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-eyebrow text-gray-05">{label}</dt>
-      <dd className="text-mono-s break-all text-gray-06">{value || '—'}</dd>
+      <dt className="text-label text-gray-05">{label}</dt>
+      <dd className="text-mono-body break-all text-gray-06">{value || '—'}</dd>
     </div>
   )
 }
@@ -45,7 +45,7 @@ function NodeCard({ node, probe }: { node: StorageNode; probe?: NodeProbe }) {
     <article className="flex flex-col gap-3 border border-gray-01 bg-white p-4">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-h4-sans text-brand-dark-green">{node.name}</span>
-        <span className="text-caption-sans text-gray-05">role {node.role}</span>
+        <span className="text-body-sans text-gray-05">role {node.role}</span>
       </div>
       <dl className="flex flex-col gap-2">
         <Field label="Located" value={place} />
@@ -57,8 +57,8 @@ function NodeCard({ node, probe }: { node: StorageNode; probe?: NodeProbe }) {
           value={node.mixPubKey ? 'yes' : 'no mix key published'}
         />
         <div className="flex flex-col gap-0.5">
-          <dt className="text-eyebrow text-gray-05">Port {node.port}</dt>
-          <dd className="text-mono-s">
+          <dt className="text-label text-gray-05">Port {node.port}</dt>
+          <dd className="text-mono-body">
             <Reachability isReachable={probe?.isReachable ?? null} />
           </dd>
         </div>
@@ -96,7 +96,7 @@ export function StorageNetwork() {
       </div>
 
       {error && (
-        <p role="alert" className="text-caption-sans text-accent-purple">
+        <p role="alert" className="text-body-sans text-accent-purple">
           {error}
         </p>
       )}
@@ -109,25 +109,25 @@ export function StorageNetwork() {
         <>
           <dl className="grid grid-cols-2 gap-5 border border-gray-01 bg-white p-5 sm:grid-cols-4">
             <div className="flex flex-col gap-1">
-              <dt className="text-eyebrow text-gray-05">Nodes</dt>
+              <dt className="text-label text-gray-05">Nodes</dt>
               <dd className="text-h4-sans text-brand-dark-green">
                 {nodes.length}
               </dd>
             </div>
             <div className="flex flex-col gap-1">
-              <dt className="text-eyebrow text-gray-05">Regions</dt>
+              <dt className="text-label text-gray-05">Regions</dt>
               <dd className="text-h4-sans text-brand-dark-green">
                 {regions.length}
               </dd>
             </div>
             <div className="flex flex-col gap-1">
-              <dt className="text-eyebrow text-gray-05">Mix relays</dt>
+              <dt className="text-label text-gray-05">Mix relays</dt>
               <dd className="text-h4-sans text-brand-dark-green">
                 {mixCapable}
               </dd>
             </div>
             <div className="flex flex-col gap-1">
-              <dt className="text-eyebrow text-gray-05">Roles</dt>
+              <dt className="text-label text-gray-05">Roles</dt>
               <dd className="text-h4-sans text-brand-dark-green">
                 {Object.entries(roles)
                   .map(([role, count]) => `${count} ${role}`)
@@ -138,7 +138,7 @@ export function StorageNetwork() {
 
           {regions.map(({ region, nodes: group }) => (
             <section key={region} className="flex flex-col gap-3">
-              <h2 className="text-eyebrow text-gray-05">
+              <h2 className="text-label text-gray-05">
                 {region} ({group.length})
               </h2>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -151,7 +151,7 @@ export function StorageNetwork() {
         </>
       )}
 
-      <p className="text-caption-sans text-gray-05">
+      <p className="text-body-sans text-gray-05">
         Read from the roster published at fleets.logos.co. This shows who runs
         the network, not its contents: a browser cannot join Logos Storage, so
         there is nothing here to upload a file to.

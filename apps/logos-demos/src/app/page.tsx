@@ -26,7 +26,7 @@ export default function Page() {
                 <span className="text-h4-sans text-brand-dark-green">
                   {demo.label}
                 </span>
-                <span className="text-mono-s text-gray-05">{demo.stack}</span>
+                <span className="text-mono-body text-gray-05">{demo.stack}</span>
               </div>
               <span className="text-body-sans max-w-[62ch] text-gray-06">
                 {demo.summary}

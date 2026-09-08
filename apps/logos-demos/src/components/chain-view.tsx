@@ -18,7 +18,7 @@ import {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1">
-      <dt className="text-eyebrow text-gray-05">{label}</dt>
+      <dt className="text-label text-gray-05">{label}</dt>
       <dd className="text-h4-sans break-all text-brand-dark-green">{value}</dd>
     </div>
   )
@@ -64,7 +64,7 @@ function Liveness({
       <span className="text-body-sans text-brand-dark-green">
         {isAdvancing ? 'Producing blocks' : 'Height is not moving'}
       </span>
-      <span className="text-caption-sans text-gray-05">
+      <span className="text-body-sans text-gray-05">
         height last changed {formatAge(liveness.sinceMs)}
       </span>
     </div>
@@ -76,26 +76,26 @@ function NodeCard({ node }: { node: NodeStatus }) {
     <article className="flex flex-col gap-3 border border-gray-01 bg-white p-4">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-h4-sans text-brand-dark-green">{node.label}</span>
-        <span className="text-caption-sans text-gray-05">
+        <span className="text-body-sans text-gray-05">
           {node.state} · {node.phase}
         </span>
       </div>
       <dl className="flex flex-col gap-2">
         <div className="flex flex-col gap-0.5">
-          <dt className="text-eyebrow text-gray-05">Peer id</dt>
-          <dd className="text-mono-s break-all text-gray-06">
+          <dt className="text-label text-gray-05">Peer id</dt>
+          <dd className="text-mono-body break-all text-gray-06">
             {shortenHash(node.peerId)}
           </dd>
         </div>
         <div className="flex flex-col gap-0.5">
-          <dt className="text-eyebrow text-gray-05">Connected peers</dt>
-          <dd className="text-mono-s text-gray-06">
+          <dt className="text-label text-gray-05">Connected peers</dt>
+          <dd className="text-mono-body text-gray-06">
             {node.connectedPeers.length}
           </dd>
         </div>
         <div className="flex flex-col gap-0.5">
-          <dt className="text-eyebrow text-gray-05">Tip</dt>
-          <dd className="text-mono-s break-all text-gray-06">
+          <dt className="text-label text-gray-05">Tip</dt>
+          <dd className="text-mono-body break-all text-gray-06">
             {shortenHash(node.tip)}
           </dd>
         </div>
@@ -120,26 +120,26 @@ function BlockRow({ block, isLive }: { block: Block; isLive?: boolean }) {
             {block.slot}
           </span>
           {isLive && (
-            <span className="text-caption-sans text-accent-steel-teal">
+            <span className="text-body-sans text-accent-steel-teal">
               arrived live
             </span>
           )}
-          <span className="text-mono-s flex-1 break-all text-gray-06">
+          <span className="text-mono-body flex-1 break-all text-gray-06">
             {shortenHash(block.id)}
           </span>
-          <span className="text-caption-sans text-gray-05">
+          <span className="text-body-sans text-gray-05">
             {block.transactionCount}{' '}
             {block.transactionCount === 1 ? 'tx' : 'txs'}
           </span>
-          <span className="text-mono-s w-full text-gray-04 sm:w-auto">
+          <span className="text-mono-body w-full text-gray-04 sm:w-auto">
             {block.timestamp === null ? '—' : formatTimestamp(block.timestamp)}
           </span>
         </summary>
 
         <dl className="flex flex-col gap-3 border-t border-gray-01 px-4 py-4">
           <div className="flex flex-col gap-1">
-            <dt className="text-eyebrow text-gray-05">Block id</dt>
-            <dd className="text-mono-s break-all">
+            <dt className="text-label text-gray-05">Block id</dt>
+            <dd className="text-mono-body break-all">
               <Link
                 href={`/blockchain/block/${block.id}`}
                 className="cursor-pointer text-brand-dark-green underline decoration-gray-02 underline-offset-2 hover:decoration-brand-dark-green"
@@ -149,28 +149,28 @@ function BlockRow({ block, isLive }: { block: Block; isLive?: boolean }) {
             </dd>
           </div>
           <div className="flex flex-col gap-1">
-            <dt className="text-eyebrow text-gray-05">Parent</dt>
-            <dd className="text-mono-s break-all text-gray-06">
+            <dt className="text-label text-gray-05">Parent</dt>
+            <dd className="text-mono-body break-all text-gray-06">
               {block.parent || '—'}
             </dd>
           </div>
           <div className="flex flex-col gap-1">
-            <dt className="text-eyebrow text-gray-05">
+            <dt className="text-label text-gray-05">
               Leader key (proof of leadership)
             </dt>
-            <dd className="text-mono-s break-all text-gray-06">
+            <dd className="text-mono-body break-all text-gray-06">
               {block.leaderKey || '—'}
             </dd>
           </div>
           <div className="flex flex-col gap-1">
-            <dt className="text-eyebrow text-gray-05">Voucher commitment</dt>
-            <dd className="text-mono-s break-all text-gray-06">
+            <dt className="text-label text-gray-05">Voucher commitment</dt>
+            <dd className="text-mono-body break-all text-gray-06">
               {block.voucherCommitment || '—'}
             </dd>
           </div>
           <div className="flex flex-col gap-1">
-            <dt className="text-eyebrow text-gray-05">Entropy contribution</dt>
-            <dd className="text-mono-s break-all text-gray-06">
+            <dt className="text-label text-gray-05">Entropy contribution</dt>
+            <dd className="text-mono-body break-all text-gray-06">
               {block.entropyContribution || '—'}
             </dd>
           </div>
@@ -196,7 +196,7 @@ export function ChainView() {
   return (
     <div className="flex flex-col gap-6">
       {error && (
-        <p role="alert" className="text-caption-sans text-accent-purple">
+        <p role="alert" className="text-body-sans text-accent-purple">
           {error}
         </p>
       )}
@@ -221,16 +221,16 @@ export function ChainView() {
 
           <dl className="flex flex-col gap-4 border-t border-gray-01 pt-4">
             <div className="flex flex-col gap-1">
-              <dt className="text-eyebrow text-gray-05">Chain tip</dt>
-              <dd className="text-mono-s break-all text-brand-dark-green">
+              <dt className="text-label text-gray-05">Chain tip</dt>
+              <dd className="text-mono-body break-all text-brand-dark-green">
                 {lead.tip}
               </dd>
             </div>
             <div className="flex flex-col gap-1">
-              <dt className="text-eyebrow text-gray-05">
+              <dt className="text-label text-gray-05">
                 Last irreversible block
               </dt>
-              <dd className="text-mono-s break-all text-brand-dark-green">
+              <dd className="text-mono-body break-all text-brand-dark-green">
                 {lead.lib}
               </dd>
             </div>
@@ -241,11 +241,11 @@ export function ChainView() {
       {view && view.nodes.length > 0 && (
         <section className="flex flex-col gap-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-eyebrow text-gray-05">
+            <h2 className="text-label text-gray-05">
               Testnet nodes ({view.nodes.length})
             </h2>
             {view.nodes.length > 1 && (
-              <span className="text-caption-sans text-gray-05">
+              <span className="text-body-sans text-gray-05">
                 {nodesAgree(view.nodes)
                   ? 'all reporting the same tip'
                   : 'reporting different tips'}
@@ -263,11 +263,11 @@ export function ChainView() {
       {view && merged.length > 0 && (
         <section className="flex flex-col gap-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-eyebrow text-gray-05">
+            <h2 className="text-label text-gray-05">
               Recent blocks ({merged.length} of {view.headerCount})
             </h2>
             <div className="flex items-center gap-3">
-              <span className="text-caption-sans text-gray-05">
+              <span className="text-body-sans text-gray-05">
                 {view.mempoolSize === 0
                   ? 'mempool empty'
                   : `${view.mempoolSize} in mempool`}
@@ -279,7 +279,7 @@ export function ChainView() {
                     isLive ? 'animate-pulse bg-accent-steel-teal' : 'bg-gray-02'
                   }`}
                 />
-                <span className="text-caption-sans text-gray-05">
+                <span className="text-body-sans text-gray-05">
                   {isLive ? 'streaming' : 'reconnecting'}
                 </span>
               </span>
@@ -298,7 +298,7 @@ export function ChainView() {
         </section>
       )}
 
-      <p className="text-caption-sans text-gray-05">
+      <p className="text-body-sans text-gray-05">
         Read from the Logos Blockchain testnet nodes. They allow browser calls,
         but serve plain HTTP while this page is HTTPS, so a small read-only
         endpoint in this app makes the request. Nothing is written.

@@ -86,6 +86,45 @@ test.describe('site metadata', () => {
     }
   })
 
+  test.describe('type', () => {
+    /**
+     * The floor, checked where it actually applies.
+     *
+     * Sizes come from several places at once: this app, the shared tokens, and
+     * components inside `@acid-info/logos-ui` that set their own. Only the
+     * rendered page shows the result, and a 12px button label survived two
+     * rounds of grepping the source before this caught it.
+     */
+    for (const path of ['/', '/messaging', '/blockchain', '/storage']) {
+      test(`nothing on ${path} renders below 14px`, async ({ page }) => {
+        await page.goto(path)
+
+        const smallest = await page.evaluate(() => {
+          let min = Infinity
+          let sample = ''
+          for (const el of document.querySelectorAll('*')) {
+            const ownText = [...el.childNodes].some(
+              (node) => node.nodeType === 3 && node.textContent?.trim()
+            )
+            if (!ownText) continue
+
+            const size = parseFloat(getComputedStyle(el).fontSize)
+            if (size < min) {
+              min = size
+              sample = el.textContent?.trim().slice(0, 40) ?? ''
+            }
+          }
+          return { min, sample }
+        })
+
+        expect(
+          smallest.min,
+          `smallest text: ${smallest.sample}`
+        ).toBeGreaterThanOrEqual(14)
+      })
+    }
+  })
+
   test('a shared file asks not to be indexed', async ({ page }) => {
     await page.goto('/storage/c/not-a-cid')
     expect(await meta(page, 'name="robots"')).toContain('noindex')

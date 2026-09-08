@@ -40,7 +40,7 @@ export function CopyButton({ value, label }: { value: string; label: string }) {
       type="button"
       onClick={copy}
       aria-label={label}
-      className="text-caption-sans shrink-0 cursor-pointer border border-gray-02 bg-white px-2 py-1 text-brand-dark-green hover:bg-gray-00"
+      className="text-body-sans shrink-0 cursor-pointer border border-gray-02 bg-white px-2 py-1 text-brand-dark-green hover:bg-gray-00"
     >
       {state === 'copied' ? 'Copied' : state === 'failed' ? 'Press ⌘C' : 'Copy'}
     </button>
