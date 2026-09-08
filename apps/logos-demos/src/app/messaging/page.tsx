@@ -1,7 +1,9 @@
 import { ChatRoom } from '@/components/chat-room'
 import { LearnMoreButton } from '@/components/learn-more-button'
+import { References } from '@/components/references'
 import { readExplainer } from '@/demos/explainer'
 import { demoMetadata } from '@/demos/metadata'
+import { referencesFor } from '@/demos/references'
 import { findDemo } from '@/demos/registry'
 
 const DEMO_HREF = '/messaging'
@@ -24,6 +26,8 @@ export default function Page() {
       </header>
 
       <ChatRoom />
+
+      <References items={referencesFor(DEMO_HREF)} />
     </div>
   )
 }

@@ -1,8 +1,10 @@
 import { ChainSearch } from '@/components/chain-search'
 import { ChainView } from '@/components/chain-view'
 import { LearnMoreButton } from '@/components/learn-more-button'
+import { References } from '@/components/references'
 import { readExplainer } from '@/demos/explainer'
 import { demoMetadata } from '@/demos/metadata'
+import { referencesFor } from '@/demos/references'
 import { findDemo } from '@/demos/registry'
 
 const DEMO_HREF = '/blockchain'
@@ -27,6 +29,8 @@ export default function Page() {
 
       <ChainSearch />
       <ChainView />
+
+      <References items={referencesFor(DEMO_HREF)} />
     </div>
   )
 }
