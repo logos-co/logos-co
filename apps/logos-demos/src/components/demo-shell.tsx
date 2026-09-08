@@ -49,7 +49,7 @@ export function DemoShell({ children }: { children: ReactNode }) {
               className={`${pathname === demo.href ? 'active' : ''} cursor-pointer`}
               href={demo.href}
             >
-              {demo.label} <span>{demo.stack}</span>
+              {demo.label}
             </Link>
           ))}
         </nav>

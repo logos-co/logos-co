@@ -106,8 +106,6 @@ input:focus-visible {
 .primary-nav a {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
   min-height: 42px;
   padding: 0 12px;
   color: rgb(245 245 239 / 66%);
@@ -118,20 +116,10 @@ input:focus-visible {
     color 150ms ease;
 }
 
-.primary-nav a span {
-  font-family: var(--font-mono-body);
-  font-size: 11px;
-  color: rgb(245 245 239 / 45%);
-}
-
 .primary-nav a:hover,
 .primary-nav a.active {
   background: rgb(245 245 239 / 10%);
   color: var(--color-brand-off-white);
-}
-
-.primary-nav a.active span {
-  color: rgb(245 245 239 / 70%);
 }
 
 .sidebar-note {

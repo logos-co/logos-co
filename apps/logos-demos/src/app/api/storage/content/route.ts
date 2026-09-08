@@ -1,11 +1,12 @@
-import { head, put } from '@vercel/blob'
+import { list, put } from '@vercel/blob'
 import { NextResponse } from 'next/server'
 
 import {
-  computeCid,
-  MAX_SHARE_BYTES,
   blobPathFor,
+  blobPrefixFor,
+  computeCid,
   isCid,
+  MAX_SHARE_BYTES,
 } from '@/lib/storage-share'
 
 /**
@@ -16,17 +17,12 @@ import {
  * CID is still the real one the network would assign, and the read path checks
  * the bytes against it, so the link is content-addressed even though the
  * hosting is ordinary.
- *
- * The CID is the key, which makes writes idempotent: the same file published
- * twice lands on the same object.
  */
 
 export const runtime = 'nodejs'
 
-const configured = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN)
-
 export async function POST(request: Request) {
-  if (!configured()) {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
     return NextResponse.json(
       { error: 'Sharing is not configured in this deployment.' },
       { status: 501 }
@@ -37,11 +33,17 @@ export async function POST(request: Request) {
   const claimedCid = url.searchParams.get('cid') ?? ''
   const mimetype =
     url.searchParams.get('mimetype') || 'application/octet-stream'
-  const filename = url.searchParams.get('filename') || null
+  const filename = url.searchParams.get('filename') || ''
 
   if (!isCid(claimedCid)) {
     return NextResponse.json(
       { error: 'Not a Logos Storage CID.' },
+      { status: 400 }
+    )
+  }
+  if (!filename) {
+    return NextResponse.json(
+      { error: 'A filename is required.' },
       { status: 400 }
     )
   }
@@ -68,15 +70,15 @@ export async function POST(request: Request) {
     )
   }
 
-  const pathname = blobPathFor(cid)
-
-  // Same CID, same bytes, so an existing object needs no rewrite.
-  const existing = await head(pathname).catch(() => null)
-  if (existing) {
-    return NextResponse.json({ cid, url: existing.url })
+  // Same CID means the same bytes, so anything already there needs no rewrite.
+  const existing = await list({ prefix: blobPrefixFor(cid), limit: 1 }).catch(
+    () => null
+  )
+  if (existing?.blobs.length) {
+    return NextResponse.json({ cid, url: existing.blobs[0].url })
   }
 
-  const blob = await put(pathname, Buffer.from(body), {
+  const blob = await put(blobPathFor(cid, filename), Buffer.from(body), {
     access: 'public',
     contentType: mimetype,
     addRandomSuffix: false,

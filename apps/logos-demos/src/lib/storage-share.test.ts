@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { blobPathFor, isCid } from './storage-share'
+import { blobPathFor, filenameFromBlobPath, isCid } from './storage-share'
 
 const REAL_CID = 'zDvZRwzm1XSHX9H19xAyPoetd9JwN4iKAmk5DKcMdu5wy9kNrYzj'
 
@@ -34,6 +34,33 @@ describe('isCid', () => {
   })
 
   it('keeps every CID inside one prefix', () => {
-    expect(blobPathFor(REAL_CID)).toBe(`logos-demos/content/${REAL_CID}`)
+    expect(blobPathFor(REAL_CID, 'a.png')).toBe(
+      `logos-demos/content/${REAL_CID}/a.png`,
+    )
+  })
+})
+
+describe('filenames in the stored path', () => {
+  // The filename is a manifest field, so it is part of the CID. If it did not
+  // survive storage exactly, the shared page would re-derive a different CID
+  // and report a mismatch on a file that is perfectly intact.
+  it.each([
+    'hello.txt',
+    'a file with spaces.png',
+    'ünïcödé.jpg',
+    'slash/in/name.bin',
+    '..',
+    'percent%20already.txt',
+    'quote"and#hash.gif',
+  ])('round-trips %j', (filename) => {
+    const path = blobPathFor(REAL_CID, filename)
+    expect(filenameFromBlobPath(path)).toBe(filename)
+  })
+
+  it('keeps a name with slashes inside the CID prefix', () => {
+    // Otherwise a name could invent path segments and land elsewhere.
+    const path = blobPathFor(REAL_CID, '../../escape.txt')
+    expect(path.startsWith(`logos-demos/content/${REAL_CID}/`)).toBe(true)
+    expect(path.split('/')).toHaveLength(4)
   })
 })
