@@ -8,11 +8,14 @@
     "start": "next start --port 3005",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@acid-info/logos-tokens": "workspace:*",
     "@acid-info/logos-ui": "workspace:*",
+    "@vercel/blob": "^2.8.0",
     "@waku/sdk": "^0.0.36",
     "mermaid": "^11.17.2",
     "next": "16.2.4",
@@ -31,6 +34,7 @@
     "eslint": "^10.2.1",
     "postcss": "^8.5.10",
     "tailwindcss": "^4.2.2",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
   }
 }
