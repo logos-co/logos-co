@@ -24,6 +24,10 @@ promising a new demo.
 - Components come from `@acid-info/logos-ui` (`Button`, `Card`, `Table`, icons,
   `LogosMark`). If a primitive is missing, add it to `packages/ui` rather than
   writing a local one.
+- **Nothing goes below 14px, and no size is ever a literal.** The token set has
+  12px steps; this app defines `text-label` and `text-mono-body` instead, and
+  sizes elsewhere come from Tailwind's scale rather than `font-size: 13px` or
+  `text-[15px]`.
 - Typography uses the token utilities: `text-hero`, `text-h1`, `text-h2`,
   `text-h3-sans`, `text-subhead-sans`, `text-body-sans`, `text-caption-sans`,
   `text-eyebrow`, `text-mono-s`, and the serif variants. Never set

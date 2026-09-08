@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
+import { CopyButton } from '@/components/copy-button'
 import { computeCid } from '@/lib/storage-cid'
 
 type Props = {
@@ -20,14 +21,14 @@ type Check =
   | { status: 'failed'; reason: string }
 
 /**
- * How many times to ask for the bytes, and how long to wait between tries.
+ * How hard to try for the bytes.
  *
- * A file published a moment ago is not always readable yet, and a link opened
- * straight after publishing lands in that window. One attempt would report an
- * intact file as unverifiable.
+ * A file published a moment ago is not readable immediately, and this page is
+ * opened straight after publishing, so it lands in that window. The delays back
+ * off to cover roughly eight seconds in total.
  */
-const FETCH_ATTEMPTS = 5
-const RETRY_MS = 500
+const FETCH_ATTEMPTS = 6
+const RETRY_BACKOFF_MS = [300, 600, 1200, 2400, 4000]
 
 async function fetchBytes(
   url: string,
@@ -37,18 +38,51 @@ async function fetchBytes(
 
   for (let attempt = 0; attempt < FETCH_ATTEMPTS; attempt += 1) {
     if (attempt > 0) {
-      await new Promise((resolve) => setTimeout(resolve, RETRY_MS))
+      const wait = RETRY_BACKOFF_MS[attempt - 1] ?? RETRY_BACKOFF_MS.at(-1)!
+      await new Promise((resolve) => setTimeout(resolve, wait))
       if (isCancelled()) throw new Error('cancelled')
     }
 
-    // `no-store`, because a 404 from the moment before publication landed can
-    // otherwise be served from cache for the whole retry window.
-    const response = await fetch(url, { cache: 'no-store' })
+    /*
+     * Retries ask for a slightly different URL.
+     *
+     * The store sits behind a CDN that caches the 404 it served before the file
+     * had propagated, and `no-store` only bypasses the browser's own cache, so
+     * every retry to the same URL got that same stale 404 back. A unique query
+     * defeats it. The first attempt is left clean so the normal case stays
+     * cacheable.
+     */
+    const target = attempt === 0 ? url : `${url}?retry=${attempt}`
+
+    const response = await fetch(target, { cache: 'no-store' })
     if (response.ok) return new Uint8Array(await response.arrayBuffer())
     lastStatus = response.status
   }
 
   throw new Error(`fetch returned ${lastStatus}`)
+}
+
+/** How much of a text file to show before it stops being a preview. */
+const TEXT_PREVIEW_LIMIT = 200_000
+
+/**
+ * The file as text, or null if it is not text.
+ *
+ * A node refuses most text Content-Types, so files published here usually
+ * arrive with no recorded type at all and would otherwise be written off as
+ * unshowable. Decoding strictly is the test: real UTF-8 text decodes, and
+ * anything binary throws. A NUL byte rules out the few binaries that would
+ * otherwise slip through.
+ */
+function asText(bytes: Uint8Array): string | null {
+  if (bytes.length > TEXT_PREVIEW_LIMIT) return null
+  if (bytes.includes(0)) return null
+
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    return null
+  }
 }
 
 const readableSize = (bytes: number) =>
@@ -74,6 +108,9 @@ export function SharedContent({ cid, url, filename, mimetype, size }: Props) {
    */
   const [objectUrl, setObjectUrl] = useState<string | null>(null)
 
+  /** Set when the bytes turn out to be readable text. */
+  const [text, setText] = useState<string | null>(null)
+
   // What to render as. The manifest's mimetype can be absent, and the file is
   // still worth showing, so fall back to what the store serves it as.
   const rendered = mimetype ?? 'application/octet-stream'
@@ -97,6 +134,7 @@ export function SharedContent({ cid, url, filename, mimetype, size }: Props) {
         setObjectUrl(
           URL.createObjectURL(new Blob([bytes as BlobPart], { type: rendered }))
         )
+        setText(asText(bytes))
 
         setCheck(
           computed === cid
@@ -125,40 +163,100 @@ export function SharedContent({ cid, url, filename, mimetype, size }: Props) {
   }, [objectUrl])
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="border border-gray-01 bg-white p-4">
-        {!objectUrl ? (
-          <p className="text-body-sans text-gray-05">Fetching the file…</p>
-        ) : rendered.startsWith('image/') ? (
-          <img
-            src={objectUrl}
-            alt={cid}
-            className="mx-auto max-h-[60vh] w-auto"
-          />
-        ) : rendered.startsWith('video/') ? (
-          <video
-            src={objectUrl}
-            controls
-            className="mx-auto max-h-[60vh] w-auto"
-          />
-        ) : rendered.startsWith('audio/') ? (
-          <audio src={objectUrl} controls className="w-full" />
-        ) : (
+    <article className="flex flex-col gap-8">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex min-w-0 flex-col gap-2">
+          <p className="text-label text-gray-05">Shared file</p>
+          <h1 className="text-h3-sans break-all text-brand-dark-green">
+            {filename}
+          </h1>
           <p className="text-body-sans text-gray-05">
-            Nothing to show inline for this file type. It can still be saved.
+            {readableSize(size)} · {mimetype ?? 'no file type recorded'}
           </p>
-        )}
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="text-body-sans break-all text-gray-06">
-          {filename} · {readableSize(size)}
-        </span>
+        </div>
         <DownloadButton filename={filename} url={objectUrl} />
-      </div>
+      </header>
 
-      <VerificationLine check={check} />
-    </div>
+      <section className="flex flex-col gap-2">
+        <h2 className="text-label text-gray-05">Preview</h2>
+        <div className="flex min-h-40 items-center justify-center border border-gray-01 bg-white p-4">
+          <Preview
+            cid={cid}
+            objectUrl={objectUrl}
+            mimetype={rendered}
+            text={text}
+          />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-label text-gray-05">Integrity</h2>
+        <VerificationLine check={check} />
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-label text-gray-05">Content address</h2>
+        <div className="flex items-start gap-2">
+          <code className="text-mono-body min-w-0 break-all text-gray-06">
+            {cid}
+          </code>
+          <CopyButton value={cid} label="Copy the content address" />
+        </div>
+        <p className="text-body-sans text-gray-05">
+          A hash of the file itself, so these bytes have this address on any
+          Logos Storage node, and no other file can take it.
+        </p>
+      </section>
+    </article>
+  )
+}
+
+/** What to show in the preview box, in the order a reader would want it. */
+function Preview({
+  cid,
+  objectUrl,
+  mimetype,
+  text,
+}: {
+  cid: string
+  objectUrl: string | null
+  mimetype: string
+  text: string | null
+}) {
+  if (!objectUrl) {
+    return <p className="text-body-sans text-gray-05">Fetching the file…</p>
+  }
+
+  if (mimetype.startsWith('image/')) {
+    return (
+      <img src={objectUrl} alt={cid} className="mx-auto max-h-[60vh] w-auto" />
+    )
+  }
+
+  if (mimetype.startsWith('video/')) {
+    return (
+      <video src={objectUrl} controls className="mx-auto max-h-[60vh] w-auto" />
+    )
+  }
+
+  if (mimetype.startsWith('audio/')) {
+    return <audio src={objectUrl} controls className="w-full" />
+  }
+
+  // Most files published here are text with no recorded type, so showing it
+  // beats telling someone their file cannot be shown when it plainly can.
+  if (text !== null) {
+    return (
+      <pre className="text-mono-body max-h-[60vh] w-full overflow-auto whitespace-pre-wrap text-gray-06">
+        {text}
+      </pre>
+    )
+  }
+
+  return (
+    <p className="text-body-sans text-gray-05">
+      This file cannot be shown here. Download it to open it.
+    </p>
   )
 }
 
@@ -178,7 +276,7 @@ function DownloadButton({
 }) {
   if (!url) {
     return (
-      <span className="text-caption-sans shrink-0 text-gray-05">
+      <span className="text-body-sans shrink-0 text-gray-05">
         Preparing download…
       </span>
     )
@@ -199,7 +297,7 @@ function VerificationLine({ check }: { check: Check }) {
   if (check.status === 'checking') {
     return (
       <p className="text-body-sans text-gray-05">
-        Re-hashing what arrived, to check it against the CID…
+        Re-hashing the file to check it against the address…
       </p>
     )
   }
@@ -207,8 +305,8 @@ function VerificationLine({ check }: { check: Check }) {
   if (check.status === 'match') {
     return (
       <p className="text-body-sans text-brand-dark-green">
-        These bytes hash to the CID in the URL. The address describes what you
-        are looking at.
+        Verified. This file hashes to the address in the URL, so it is exactly
+        what was published and nothing has altered it since.
       </p>
     )
   }
@@ -217,10 +315,11 @@ function VerificationLine({ check }: { check: Check }) {
     return (
       <div className="flex flex-col gap-1">
         <p className="text-body-sans text-red">
-          These bytes do not hash to the CID in the URL.
+          Does not match. This file does not hash to the address in the URL, so
+          it is not what that address names.
         </p>
-        <code className="text-mono-s break-all text-gray-06">
-          {check.computed}
+        <code className="text-mono-body break-all text-gray-06">
+          It hashes to {check.computed}
         </code>
       </div>
     )
@@ -228,7 +327,7 @@ function VerificationLine({ check }: { check: Check }) {
 
   return (
     <p className="text-body-sans text-gray-05">
-      Could not check the bytes against the CID ({check.reason}).
+      Could not check the file against its address ({check.reason}).
     </p>
   )
 }

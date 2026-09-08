@@ -21,8 +21,8 @@ const STATUS_TONE: Record<NodeSnapshot['status'], string> = {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1">
-      <dt className="text-eyebrow text-gray-05">{label}</dt>
-      <dd className="text-mono-s break-all text-brand-dark-green">{value}</dd>
+      <dt className="text-label text-gray-05">{label}</dt>
+      <dd className="text-mono-body break-all text-brand-dark-green">{value}</dd>
     </div>
   )
 }
@@ -56,12 +56,12 @@ export function NetworkStatus({ snapshot }: { snapshot: NodeSnapshot }) {
 
       {snapshot.peerIds.length > 0 && (
         <details>
-          <summary className="text-caption-sans cursor-pointer text-gray-05 hover:text-brand-dark-green">
+          <summary className="text-body-sans cursor-pointer text-gray-05 hover:text-brand-dark-green">
             Peers this browser is talking to
           </summary>
           <ul className="mt-2 flex flex-col gap-1">
             {snapshot.peerIds.map((peerId) => (
-              <li key={peerId} className="text-mono-s text-gray-06">
+              <li key={peerId} className="text-mono-body text-gray-06">
                 {shortenPeerId(peerId)}
               </li>
             ))}
@@ -72,7 +72,7 @@ export function NetworkStatus({ snapshot }: { snapshot: NodeSnapshot }) {
       {snapshot.error && (
         <p
           role="alert"
-          className="text-caption-sans border border-accent-purple bg-brand-off-white p-3 text-accent-purple"
+          className="text-body-sans border border-accent-purple bg-brand-off-white p-3 text-accent-purple"
         >
           {snapshot.error}
         </p>

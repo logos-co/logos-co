@@ -18,6 +18,14 @@ A proxy is allowed only where the alternative is no demo at all, and only for **
 
 **Notes:** [`docs/`](./docs/) covers the stack and its naming, live endpoints and what a browser can reach, `@waku/sdk` gotchas, and deployment traps. Read [`docs/browser-viability.md`](./docs/browser-viability.md) before promising a new demo, and add to `docs/` when you learn something the hard way.
 
+## Nothing smaller than 14px, and no size literals
+
+The shared tokens include 12px steps (`text-eyebrow`, `text-mono-s`, `text-caption-sans`). **Do not use them here.** This app defines `text-label` and `text-mono-body` in `globals.css` for those roles, and `text-body-sans` is already 14px.
+
+Never write a font size as a literal, in CSS or as `text-[15px]`. Sizes come from Tailwind's scale (`var(--text-sm)`, `var(--text-base)`, `var(--text-lg)`, `var(--text-xl)`).
+
+The tokens are not changed to fix this, because logos.co uses them too.
+
 ## Use the existing design system (required)
 
 **Every demo uses the existing Logos design system.** Never hand-roll styling — a demo that looks unlike logos.co is a bug, however well it works.
@@ -94,19 +102,19 @@ Worse, the build does not even see most variables. `turbo.json` declares an `env
 
 Vercel Blob answers a read of an object it accepted about half a second ago with a 404, and the shared page is opened straight after publishing, so it lands in exactly that window. Worse, the 404 is cacheable, so a single failed attempt sticks.
 
-`shared-content.tsx` retries with `cache: 'no-store'`. Tests only ever passed before because the object already existed from an earlier run; emptying the store made it fail every time. **Empty the store before trusting a share test.**
+`shared-content.tsx` retries with a backoff, and each retry appends a unique query. `cache: 'no-store'` alone was not enough: it bypasses the browser's cache, not the CDN's, so every retry to the same URL got the same cached 404 back. Tests only ever passed before because the object already existed from an earlier run; emptying the store made it fail every time. **Empty the store before trusting a share test.**
 
 ## Cover both mimetype paths, not just the easy one
 
 A file either carries a mimetype or does not, and those are different code paths through publishing. Testing only the first hid a real bug twice: the share route defaulted a missing mimetype to `application/octet-stream`, recomputed a CID that did not match the one the page sent, and answered 422 on a perfectly honest upload. Every test passed, because they all used a png.
 
-`e2e/storage.spec.ts` now publishes both a png and a markdown file. Keep it that way.
+`e2e/storage.spec.ts` publishes a typed file and an untyped one. Keep it that way.
 
 ## Run the end-to-end suite against a deployment before calling a fix done
 
 `E2E_BASE_URL=<url> pnpm --filter logos-demos test:e2e` skips the dev server and drives that deployment instead. Both share bugs so far only appeared on a real build, and a local pass said nothing about either.
 
-The suite starts a **fresh** dev server each run. It used to reuse a running one, and a run then reused a server started before the fix under test and reported it broken. Set `E2E_REUSE_SERVER=1` to opt back in, but not while judging whether a change worked.
+The suite starts a **fresh** dev server each run, so stop any dev server already on port 3005 (the Browser pane runs one) or the run fails immediately. It used to reuse a running one, and a run then reused a server started before the fix under test and reported it broken. Set `E2E_REUSE_SERVER=1` to opt back in, but not while judging whether a change worked.
 
 ## The mimetype is part of the CID, and nodes refuse most of them
 

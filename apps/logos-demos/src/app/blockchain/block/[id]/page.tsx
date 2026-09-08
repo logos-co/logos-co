@@ -40,8 +40,8 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <dt className="text-eyebrow text-gray-05">{label}</dt>
-      <dd className="text-mono-s break-all text-brand-dark-green">
+      <dt className="text-label text-gray-05">{label}</dt>
+      <dd className="text-mono-body break-all text-brand-dark-green">
         {href ? (
           <Link
             href={href}
@@ -71,11 +71,11 @@ export default async function Page({
       <header className="flex flex-col gap-2">
         <Link
           href="/blockchain"
-          className="text-eyebrow cursor-pointer text-gray-05 hover:text-brand-dark-green"
+          className="text-label cursor-pointer text-gray-05 hover:text-brand-dark-green"
         >
           ← Logos Blockchain
         </Link>
-        <p className="text-eyebrow text-gray-05">Block · slot {block.slot}</p>
+        <p className="text-label text-gray-05">Block · slot {block.slot}</p>
         <h1 className="text-h3-sans break-all text-brand-dark-green">
           {block.id}
         </h1>
@@ -110,7 +110,7 @@ export default async function Page({
           <h2 className="text-h4-sans text-brand-dark-green">
             Proof of leadership
           </h2>
-          <p className="text-caption-sans text-gray-05">
+          <p className="text-body-sans text-gray-05">
             Cryptarchia picks proposers through a private lottery, so a block
             proves its author won the right to make it without naming them.
           </p>

@@ -94,7 +94,7 @@ export function ChainSearch() {
       </form>
 
       {error && (
-        <p role="alert" className="text-caption-sans text-accent-purple">
+        <p role="alert" className="text-body-sans text-accent-purple">
           {error}
         </p>
       )}
@@ -104,10 +104,10 @@ export function ChainSearch() {
           href={`/blockchain/block/${result.block.id}`}
           className="flex cursor-pointer flex-col gap-1 border border-gray-01 bg-white p-4 transition-colors hover:bg-accent-light-blue"
         >
-          <span className="text-eyebrow text-gray-05">
+          <span className="text-label text-gray-05">
             Block · slot {result.block.slot}
           </span>
-          <span className="text-mono-s break-all text-brand-dark-green">
+          <span className="text-mono-body break-all text-brand-dark-green">
             {result.block.id}
           </span>
         </Link>
@@ -121,8 +121,8 @@ export function ChainSearch() {
 
       {result.kind === 'account' && (
         <div className="flex flex-col gap-1 border border-gray-01 bg-white p-4">
-          <span className="text-eyebrow text-gray-05">Account</span>
-          <span className="text-mono-s break-all text-brand-dark-green">
+          <span className="text-label text-gray-05">Account</span>
+          <span className="text-mono-body break-all text-brand-dark-green">
             {result.balance}
           </span>
         </div>
@@ -131,7 +131,7 @@ export function ChainSearch() {
       {result.kind === 'none' && (
         <p className="text-body-sans text-gray-05">
           Nothing matches{' '}
-          <span className="text-mono-s">{result.query}</span>. The node resolves
+          <span className="text-mono-body">{result.query}</span>. The node resolves
           a block id, a transaction hash or an address. The testnet is carrying
           no transactions at the moment, so only block ids find anything.
         </p>

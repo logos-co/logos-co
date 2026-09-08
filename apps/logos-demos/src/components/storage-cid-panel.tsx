@@ -14,7 +14,7 @@ const readableSize = (bytes: number) =>
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1">
-      <dt className="text-eyebrow text-gray-05">{label}</dt>
+      <dt className="text-label text-gray-05">{label}</dt>
       <dd className="text-h4-sans text-brand-dark-green">{value}</dd>
     </div>
   )
@@ -23,8 +23,8 @@ function Stat({ label, value }: { label: string; value: string }) {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-eyebrow text-gray-05">{label}</span>
-      <code className="text-mono-s break-all text-gray-06">{value}</code>
+      <span className="text-label text-gray-05">{label}</span>
+      <code className="text-mono-body break-all text-gray-06">{value}</code>
     </div>
   )
 }
@@ -35,7 +35,7 @@ function TreeLevels({ levels }: { levels: string[][] }) {
     <ol className="flex flex-col-reverse gap-2">
       {levels.map((level, index) => (
         <li key={index} className="flex flex-wrap items-baseline gap-2">
-          <span className="text-eyebrow w-24 shrink-0 text-gray-05">
+          <span className="text-label w-24 shrink-0 text-gray-05">
             {index === 0
               ? `${level.length} leaves`
               : index === levels.length - 1
@@ -47,7 +47,7 @@ function TreeLevels({ levels }: { levels: string[][] }) {
               <code
                 key={hash}
                 title={hash}
-                className="text-mono-s border border-gray-01 bg-white px-1.5 py-0.5 text-gray-06"
+                className="text-mono-body border border-gray-01 bg-white px-1.5 py-0.5 text-gray-06"
               >
                 {hash.slice(0, 8)}
               </code>
@@ -77,6 +77,7 @@ export function StorageCidPanel() {
   return (
     <section className="flex flex-col gap-4">
       <div
+        data-dropzone
         onDragOver={(event) => {
           event.preventDefault()
           setIsOver(true)
@@ -109,7 +110,7 @@ export function StorageCidPanel() {
           hidden
           onChange={(event) => take(event.target.files?.[0])}
         />
-        <p className="text-caption-sans text-gray-05">
+        <p className="text-body-sans text-gray-05">
           The file is read in this tab and never sent anywhere.
         </p>
       </div>
@@ -130,7 +131,7 @@ export function StorageCidPanel() {
                 share.reset()
                 reset()
               }}
-              className="text-caption-sans cursor-pointer text-gray-05 underline"
+              className="text-body-sans cursor-pointer text-gray-05 underline"
             >
               Clear
             </button>
@@ -149,19 +150,19 @@ export function StorageCidPanel() {
           </dl>
 
           {file.mimetype === null && (
-            <p className="text-caption-sans text-gray-05">
-              Your browser calls this {file.reportedMimetype}, which a Logos
-              Storage node refuses: it only accepts a Content-Type it can map to
-              a file extension. Uploading without one is allowed, and the node
-              then records no type at all — so that is the upload this CID
-              describes.
+            <p className="text-body-sans text-gray-05">
+              {file.reportedMimetype
+                ? `Your browser calls this ${file.reportedMimetype}, which a Logos Storage node refuses: it only accepts a file type it can map to a file extension.`
+                : 'Your browser could not name a file type for this.'}{' '}
+              Uploading with no type is allowed, and the node then records none,
+              so that is the upload this address describes.
             </p>
           )}
 
           <Row label="Tree root" value={file.breakdown.treeCid} />
 
           <div className="flex flex-col gap-2">
-            <span className="text-eyebrow text-gray-05">Merkle tree</span>
+            <span className="text-label text-gray-05">Merkle tree</span>
             <TreeLevels levels={file.breakdown.levels} />
           </div>
 
@@ -193,7 +194,7 @@ function ShareRow({
 
   if (share.availability === 'disabled') {
     return (
-      <p className="text-caption-sans text-gray-05">
+      <p className="text-body-sans text-gray-05">
         Sharing is off in this deployment. The CID above is still the real one.
       </p>
     )
@@ -203,13 +204,13 @@ function ShareRow({
     <div className="flex flex-col gap-2 border-t border-gray-01 pt-4">
       {share.url ? (
         <div className="flex flex-col gap-1">
-          <span className="text-eyebrow text-gray-05">Shareable link</span>
+          <span className="text-label text-gray-05">Shareable link</span>
           <div className="flex items-start gap-2">
             <a
               href={share.url}
               target="_blank"
               rel="noreferrer"
-              className="text-mono-s break-all text-brand-dark-green underline"
+              className="text-mono-body break-all text-brand-dark-green underline"
             >
               {share.url}
             </a>
@@ -226,10 +227,8 @@ function ShareRow({
           {share.isPublishing ? 'Publishing…' : 'Get a shareable link'}
         </button>
       )}
-      {share.error && (
-        <p className="text-caption-sans text-red">{share.error}</p>
-      )}
-      <p className="text-caption-sans text-gray-05">
+      {share.error && <p className="text-body-sans text-red">{share.error}</p>}
+      <p className="text-body-sans text-gray-05">
         The CID is the one Logos Storage would give this file. The bytes are
         served from this app&rsquo;s own store, because no public Logos Storage
         node accepts uploads. Opening the link re-hashes what comes back and

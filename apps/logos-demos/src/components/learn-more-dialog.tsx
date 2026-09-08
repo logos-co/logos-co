@@ -96,7 +96,7 @@ export function LearnMoreDialog({
               {title}
             </h2>
             <button
-              className="text-caption-sans cursor-pointer text-gray-05 hover:text-brand-dark-green"
+              className="text-body-sans cursor-pointer text-gray-05 hover:text-brand-dark-green"
               type="button"
               onClick={requestClose}
             >
