@@ -32,12 +32,12 @@ const CID_VERSION_V1 = 2
  * Key byte mixed into each merkle compression, so a node cannot be confused
  * for a leaf, or a padded position for a real one. `ByteTreeKey`.
  */
-const KEY_NONE = 0
-const KEY_BOTTOM = 1
-const KEY_ODD = 2
-const KEY_ODD_AND_BOTTOM = 3
+export const KEY_NONE = 0
+export const KEY_BOTTOM = 1
+export const KEY_ODD = 2
+export const KEY_ODD_AND_BOTTOM = 3
 
-const ZERO = new Uint8Array(32)
+export const ZERO = new Uint8Array(32)
 
 export type CidBreakdown = {
   /** The manifest CID. This is what the node prints on upload. */
@@ -48,11 +48,16 @@ export type CidBreakdown = {
   datasetSize: number
   /** One per block, in order, as `zDv…` block CIDs. */
   blockCids: string[]
-  /** Bottom-up, `levels[0]` being the leaves. Hex, for showing the tree. */
-  levels: string[][]
+  /**
+   * The merkle tree, bottom-up, `levels[0]` being the leaves.
+   *
+   * Kept as raw digests rather than hex so proofs can be taken from it. The
+   * page formats them for display.
+   */
+  levels: Uint8Array[][]
 }
 
-const sha256 = async (data: Uint8Array): Promise<Uint8Array> =>
+export const sha256 = async (data: Uint8Array): Promise<Uint8Array> =>
   new Uint8Array(await crypto.subtle.digest('SHA-256', data as BufferSource))
 
 function varint(value: number): Uint8Array {
@@ -116,11 +121,12 @@ export function toBase58Cid(bytes: Uint8Array): string {
     .join('')}`
 }
 
-const toHex = (bytes: Uint8Array): string =>
+/** Digests are shown as hex, and only ever for display. */
+export const toHex = (bytes: Uint8Array): string =>
   Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
 
 /** `compress` in merkletree.nim: sha256 over both children and the key byte. */
-async function compress(
+export async function compress(
   left: Uint8Array,
   right: Uint8Array,
   key: number
@@ -132,7 +138,7 @@ async function compress(
  * Blocks are padded to the full block size before hashing, so a 1-byte file
  * still hashes 64 KiB. Skipping the padding gives a wrong CID silently.
  */
-function blockAt(data: Uint8Array, index: number): Uint8Array {
+export function blockAt(data: Uint8Array, index: number): Uint8Array {
   const block = new Uint8Array(BLOCK_SIZE)
   block.set(data.subarray(index * BLOCK_SIZE, (index + 1) * BLOCK_SIZE))
   return block
@@ -142,7 +148,7 @@ function blockAt(data: Uint8Array, index: number): Uint8Array {
  * Folds the leaves to a root, carrying the key byte rules: the bottom layer is
  * marked, and a layer with an odd count pairs its last node with zeroes.
  */
-async function foldTree(leaves: Uint8Array[]): Promise<Uint8Array[][]> {
+export async function foldTree(leaves: Uint8Array[]): Promise<Uint8Array[][]> {
   const levels: Uint8Array[][] = [leaves]
   let layer = leaves
   let isBottom = true
@@ -240,6 +246,6 @@ export async function computeCid(
     blockCount,
     datasetSize: data.length,
     blockCids: leaves.map((leaf) => toBase58Cid(cidBytes(CODEC_BLOCK, leaf))),
-    levels: levels.map((level) => level.map(toHex)),
+    levels,
   }
 }

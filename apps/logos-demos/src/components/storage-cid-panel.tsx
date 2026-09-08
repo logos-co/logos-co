@@ -4,7 +4,8 @@ import { useCallback, useRef, useState } from 'react'
 
 import { CopyButton } from '@/components/copy-button'
 import { useCidCompute } from '@/components/use-cid-compute'
-import { BLOCK_SIZE } from '@/lib/storage-cid'
+import { StorageProofPanel } from '@/components/storage-proof-panel'
+import { BLOCK_SIZE, toHex } from '@/lib/storage-cid'
 
 const readableSize = (bytes: number) =>
   bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`
@@ -29,7 +30,7 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 /** The merkle levels, leaves at the bottom, so the fold is visible. */
-function TreeLevels({ levels }: { levels: string[][] }) {
+function TreeLevels({ levels }: { levels: Uint8Array[][] }) {
   return (
     <ol className="flex flex-col-reverse gap-2">
       {levels.map((level, index) => (
@@ -42,15 +43,18 @@ function TreeLevels({ levels }: { levels: string[][] }) {
                 : `level ${index}`}
           </span>
           <div className="flex flex-wrap gap-1">
-            {level.map((hash) => (
-              <code
-                key={hash}
-                title={hash}
-                className="text-mono-body border border-gray-01 bg-white px-1.5 py-0.5 text-gray-06"
-              >
-                {hash.slice(0, 8)}
-              </code>
-            ))}
+            {level.map((digest, position) => {
+              const hex = toHex(digest)
+              return (
+                <code
+                  key={`${index}-${position}`}
+                  title={hex}
+                  className="text-mono-body border border-gray-01 bg-white px-1.5 py-0.5 text-gray-06"
+                >
+                  {hex.slice(0, 8)}
+                </code>
+              )
+            })}
           </div>
         </li>
       ))}
@@ -170,6 +174,8 @@ export function StorageCidPanel() {
             <span className="text-label text-gray-05">Merkle tree</span>
             <TreeLevels levels={file.breakdown.levels} />
           </div>
+
+          <StorageProofPanel breakdown={file.breakdown} />
         </div>
       )}
     </section>

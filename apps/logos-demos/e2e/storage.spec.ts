@@ -124,4 +124,46 @@ test.describe('storage demo', () => {
       page.getByText(/text\/markdown, which a Logos Storage node refuses/)
     ).toBeVisible()
   })
+
+  test('proves one block belongs to the file', async ({ page }) => {
+    await drop(page, TILE)
+
+    // The point of the panel: a node proves it still holds a block without
+    // producing the rest of the file.
+    await expect(page.getByText(/^Block 0 belongs to this file/)).toBeVisible()
+  })
+
+  test('proves the odd block of a file with an odd count', async ({ page }) => {
+    // Five blocks means a level pairs its last node with zeroes, and the key
+    // byte changes with it. Block 4 is the one that walks that path.
+    await page.evaluate(() => {
+      const bytes = new Uint8Array(294912)
+      let state = 5
+      for (let i = 0; i < bytes.length; i += 1) {
+        state ^= state << 13
+        state |= 0
+        state ^= state >>> 17
+        state ^= state << 5
+        state |= 0
+        bytes[i] = state & 0xff
+      }
+
+      const transfer = new DataTransfer()
+      transfer.items.add(
+        new File([bytes], 'archive.bin', { type: 'application/octet-stream' })
+      )
+      document.querySelector('[data-dropzone]')!.dispatchEvent(
+        new DragEvent('drop', {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer: transfer,
+        })
+      )
+    })
+
+    await expect(statValue(page, 'Blocks')).toHaveText('5')
+
+    await page.getByLabel('Block').selectOption('4')
+    await expect(page.getByText(/^Block 4 belongs to this file/)).toBeVisible()
+  })
 })
