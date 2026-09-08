@@ -28,6 +28,13 @@ export const DEMOS: readonly Demo[] = [
     summary:
       'Live blocks and consensus state read from the Logos Blockchain testnet nodes, including the proof of leadership behind each block.',
   },
+  {
+    href: '/storage',
+    label: 'Logos Storage',
+    stack: 'Network',
+    summary:
+      'The live roster of nodes running the Logos Storage network, read straight from the published fleet list.',
+  },
 ]
 
 export function findDemo(href: string): Demo | undefined {

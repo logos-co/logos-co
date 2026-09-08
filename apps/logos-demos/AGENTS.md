@@ -68,6 +68,14 @@ Using the wrong one is silent. There is no type error, because both take `unknow
 
 **If a panel renders empty while its route returns data, check this first.**
 
+`/api/storage/fleet` avoids the trap by passing the roster through unchanged. There is one shape and one parser, `parseFleet`, and it runs on the client.
+
+## Never conclude an endpoint is browser-readable from curl alone
+
+A missing `access-control-allow-origin` header looks exactly like a success in a terminal: the status is 200 and the body is right there. Only the browser enforces it. `fleets.logos.co` was written up as needing no proxy on the strength of a clean `curl`, and the page then failed with a CORS error on first load.
+
+**Open the page and read the console before writing down that something works from a browser.**
+
 ## Blockchain Notes
 
 - The nodes come from `deployment/.env.testnet` in `logos-blockchain`: `PUBLIC_IP_ADDR` with API ports 18080-18083. They are public and send `access-control-allow-origin: *`.

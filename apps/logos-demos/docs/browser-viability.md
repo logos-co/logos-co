@@ -8,7 +8,7 @@ The constraint that shapes every demo in this app. Checked 2026-09-04.
 | --- | --- | --- |
 | Messaging | **Yes** | `@waku/sdk` light node over secure websockets. Nothing else |
 | Blockchain | Read-only, **via a proxy** | Nodes allow browsers, but are HTTP while the app is HTTPS |
-| Storage | **No** | No browser transport and no public endpoint. Needs a node we run |
+| Storage | Roster only, **via a proxy** | No browser transport and no public node. The published roster sends no CORS header |
 
 ## Messaging — genuinely browser-native
 
@@ -44,7 +44,7 @@ carry a build hash that moves on every deploy. Reading the nodes is
 first-hand, and it turned out the base chain was producing normally while the
 explorer's index had been stuck since 30 August.
 
-## Storage — not possible from a browser at all
+## Storage — the network cannot be joined from a browser
 
 Checked exhaustively on 2026-09-04, because it kept looking like it should be
 possible. It is not, and the reason is the transport layer rather than a
@@ -117,4 +117,10 @@ Before promising a demo, answer two questions:
 
 Messaging answers yes to both. Blockchain answers yes then no, and a proxy
 converts the no. Storage answers no to the first, and nothing in the page can
-fix that.
+fix that — so the demo shows the published roster instead, which is a proxy
+case for the ordinary reason that it sends no CORS header. See
+[storage-research.md](./storage-research.md).
+
+A third question follows from getting that last one wrong once: **a clean
+`curl` does not mean a browser may read it.** CORS is enforced by the browser
+and by nothing else, so check the console, not the status code.
