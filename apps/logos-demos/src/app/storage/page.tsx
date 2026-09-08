@@ -1,8 +1,10 @@
 import { LearnMoreButton } from '@/components/learn-more-button'
+import { References } from '@/components/references'
 import { StorageCidPanel } from '@/components/storage-cid-panel'
 import { StorageNetwork } from '@/components/storage-network'
 import { readExplainer } from '@/demos/explainer'
 import { demoMetadata } from '@/demos/metadata'
+import { referencesFor } from '@/demos/references'
 import { findDemo } from '@/demos/registry'
 
 const DEMO_HREF = '/storage'
@@ -55,6 +57,8 @@ export default function Page() {
         </SectionHeading>
         <StorageNetwork />
       </section>
+
+      <References items={referencesFor(DEMO_HREF)} />
     </div>
   )
 }

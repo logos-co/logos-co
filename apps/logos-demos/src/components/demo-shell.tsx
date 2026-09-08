@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, type ReactNode } from 'react'
 
+import { ORGS } from '@/demos/references'
 import { DEMOS } from '@/demos/registry'
 
 export function DemoShell({ children }: { children: ReactNode }) {
@@ -54,10 +55,18 @@ export function DemoShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <p className="sidebar-note">
-          Each demo says on its own page how much of it runs in your browser and
-          what, if anything, it goes through.
-        </p>
+        <div className="sidebar-orgs">
+          <span className="text-label">Source</span>
+          <ul>
+            {ORGS.map((org) => (
+              <li key={org.href}>
+                <a href={org.href} target="_blank" rel="noopener noreferrer">
+                  {org.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       </aside>
 
       <main className="demo-main" id="main-content" ref={mainRef} tabIndex={-1}>
