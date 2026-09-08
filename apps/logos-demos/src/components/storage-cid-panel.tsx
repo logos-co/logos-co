@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from 'react'
 
+import { CopyButton } from '@/components/copy-button'
 import { useCidCompute } from '@/components/use-cid-compute'
 import { useShareContent } from '@/components/use-share-content'
 import { BLOCK_SIZE } from '@/lib/storage-cid'
@@ -201,7 +202,20 @@ function ShareRow({
   return (
     <div className="flex flex-col gap-2 border-t border-gray-01 pt-4">
       {share.url ? (
-        <Row label="Shareable link" value={share.url} />
+        <div className="flex flex-col gap-1">
+          <span className="text-eyebrow text-gray-05">Shareable link</span>
+          <div className="flex items-start gap-2">
+            <a
+              href={share.url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-mono-s break-all text-brand-dark-green underline"
+            >
+              {share.url}
+            </a>
+            <CopyButton value={share.url} label="Copy the shareable link" />
+          </div>
+        </div>
       ) : (
         <button
           type="button"
