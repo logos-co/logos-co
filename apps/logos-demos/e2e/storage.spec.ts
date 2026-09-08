@@ -151,6 +151,42 @@ test.describe('storage demo', () => {
     await expect(page.getByRole('img', { name: TILE.cid })).toBeVisible()
   })
 
+  test('offers the shared link as something to click and to copy', async ({
+    page,
+    context,
+  }) => {
+    test.skip(!(await sharingEnabled(page)), 'No store configured')
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+
+    await drop(page, TILE)
+    await page.getByRole('button', { name: 'Get a shareable link' }).click()
+
+    // A real link, opening away from the page rather than replacing it.
+    const link = page.getByRole('link', { name: new RegExp(TILE.cid) })
+    await expect(link).toBeVisible()
+    await expect(link).toHaveAttribute('target', '_blank')
+
+    await page.getByRole('button', { name: 'Copy the shareable link' }).click()
+    await expect(page.getByRole('button', { name: /Copy/ })).toHaveText(
+      'Copied'
+    )
+
+    const clipboard = await page.evaluate(() => navigator.clipboard.readText())
+    expect(clipboard).toContain(TILE.cid)
+  })
+
+  test('lets the shared file be saved under its own name', async ({ page }) => {
+    test.skip(!(await sharingEnabled(page)), 'No store configured')
+
+    await publishAndOpen(page, NOTES)
+
+    // The README case again: nothing renders, so saving is the whole point.
+    const download = page.waitForEvent('download')
+    await page.getByRole('link', { name: 'Download' }).click()
+
+    expect((await download).suggestedFilename()).toBe(NOTES.name)
+  })
+
   test('publishes a file that has no mimetype', async ({ page }) => {
     test.skip(!(await sharingEnabled(page)), 'No store configured')
 

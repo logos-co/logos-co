@@ -90,6 +90,12 @@ Worse, the build does not even see most variables. `turbo.json` declares an `env
 
 **Ask a route handler instead.** Route handlers run per request and see the real environment, with no turbo declaration needed. `GET /api/storage/content` exists only to answer "can this deployment publish?".
 
+## A just-published file is not readable yet
+
+Vercel Blob answers a read of an object it accepted about half a second ago with a 404, and the shared page is opened straight after publishing, so it lands in exactly that window. Worse, the 404 is cacheable, so a single failed attempt sticks.
+
+`shared-content.tsx` retries with `cache: 'no-store'`. Tests only ever passed before because the object already existed from an earlier run; emptying the store made it fail every time. **Empty the store before trusting a share test.**
+
 ## Cover both mimetype paths, not just the easy one
 
 A file either carries a mimetype or does not, and those are different code paths through publishing. Testing only the first hid a real bug twice: the share route defaulted a missing mimetype to `application/octet-stream`, recomputed a CID that did not match the one the page sent, and answered 422 on a perfectly honest upload. Every test passed, because they all used a png.
