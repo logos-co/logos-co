@@ -60,7 +60,12 @@ export function DemoShell({ children }: { children: ReactNode }) {
           <ul>
             {ORGS.map((org) => (
               <li key={org.href}>
-                <a href={org.href} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={org.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer"
+                >
                   {org.label}
                 </a>
               </li>
