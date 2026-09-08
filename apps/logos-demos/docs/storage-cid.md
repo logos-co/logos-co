@@ -92,6 +92,18 @@ That is what the page does when the browser's type would be refused, and it
 says so. `src/lib/storage-mimetypes.ts` carries the accepted set, generated
 from nim's table. Do not widen it by guessing; check against a node.
 
+## Merkle proofs
+
+`src/lib/storage-proof.ts` ports `getProof` and `reconstructRoot` from
+`logos-storage/nim-merkletree`, which is what the node runs. It is what a
+storage proof checks: one block plus a path of siblings folds back to the root.
+
+The fold has to reproduce the key byte exactly, including the odd-node case, or
+an honest proof reconstructs the wrong root. The tests check every block index
+of files with one, three, five and seven blocks, because odd counts are where
+the padding and the key byte change, and they check the fold against a root a
+real node published rather than one this code produced.
+
 ## Two traps
 
 **`version` is 2, not 1.** The field holds nim-libp2p's `CidVersion` enum,

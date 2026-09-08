@@ -61,6 +61,31 @@ flowchart LR
   manifest --> cid[CID]
 ```
 
+## Proving a block without the file
+
+Storing something is only half of it. A network that pays nodes to keep files
+has to keep asking whether they still have them, and the answer cannot be
+"trust me".
+
+So a node is asked for a block at random. It answers with that block and the
+handful of sibling hashes on the path from it to the root. Those fold back up
+to the address the file already has, and anyone can check the fold. A node that
+quietly dropped the block cannot produce the path.
+
+That is what the **Prove one block** panel does, for whichever block you pick.
+Five blocks needs three sibling hashes; a thousand needs ten. The proof grows
+with the logarithm of the file, not the file.
+
+```mermaid
+flowchart LR
+  block[Block 3] --> fold[Fold with 3 siblings]
+  fold --> root[Root]
+  root --> addr[The file's address]
+```
+
+This is the same code path the node runs, ported from nim-merkletree, and the
+roots it folds to are the ones a real node published.
+
 ## Why the type sometimes says none
 
 A node will not accept any Content-Type. It looks the value up in a table of
