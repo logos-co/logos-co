@@ -90,25 +90,15 @@ A missing `access-control-allow-origin` header looks exactly like a success in a
 
 Do the same for anything that reimplements a protocol. A self-consistent test proves the code agrees with itself, which is exactly the thing that was never in doubt. Prebuilt binaries and stored artefacts on disk beat guessing: when the manifest encoding was wrong, `xxd` on the node's own manifest file named the field in seconds.
 
+## Nothing here may stand in for a Logos network
+
+The storage demo once published files to an object store of ours so a link could be shared. It was labelled as such and it still had to go: a demo of somebody else's storage does not belong under a Logos Storage heading, and a reader who has to reach the small print has already been misled.
+
+**If a piece of a demo is not the Logos stack, it does not ship.** Say what cannot be done instead. `docs/browser-viability.md` is where that judgement gets recorded.
+
 ## Deployment facts are runtime facts, not build-time ones
 
-`/storage` is statically prerendered, so anything it reads from `process.env` while rendering is frozen into the HTML at build time. That is how the share button came to say "sharing is off" on a deployment whose token was present: the value was correct at build and stale forever after.
-
-Worse, the build does not even see most variables. `turbo.json` declares an `env` allowlist, and Turborepo 2 strips everything else from the build environment, so a newly added variable is invisible until it is declared there too.
-
-**Ask a route handler instead.** Route handlers run per request and see the real environment, with no turbo declaration needed. `GET /api/storage/content` exists only to answer "can this deployment publish?".
-
-## A just-published file is not readable yet
-
-Vercel Blob answers a read of an object it accepted about half a second ago with a 404, and the shared page is opened straight after publishing, so it lands in exactly that window. Worse, the 404 is cacheable, so a single failed attempt sticks.
-
-`shared-content.tsx` retries with a backoff, and each retry appends a unique query. `cache: 'no-store'` alone was not enough: it bypasses the browser's cache, not the CDN's, so every retry to the same URL got the same cached 404 back. Tests only ever passed before because the object already existed from an earlier run; emptying the store made it fail every time. **Empty the store before trusting a share test.**
-
-## Cover both mimetype paths, not just the easy one
-
-A file either carries a mimetype or does not, and those are different code paths through publishing. Testing only the first hid a real bug twice: the share route defaulted a missing mimetype to `application/octet-stream`, recomputed a CID that did not match the one the page sent, and answered 422 on a perfectly honest upload. Every test passed, because they all used a png.
-
-`e2e/storage.spec.ts` publishes a typed file and an untyped one. Keep it that way.
+A statically prerendered page freezes anything it reads from `process.env` at build time, and the build does not even see most variables: `turbo.json` declares an `env` allowlist and Turborepo 2 strips the rest. Ask a route handler instead, which runs per request and needs no declaration.
 
 ## Run the end-to-end suite against a deployment before calling a fix done
 

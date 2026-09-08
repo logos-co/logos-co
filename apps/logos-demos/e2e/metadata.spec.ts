@@ -74,8 +74,7 @@ test.describe('site metadata', () => {
     const robots = await (await page.request.get('/robots.txt')).text()
 
     expect(robots).toContain(`Sitemap: ${SITE_URL}/sitemap.xml`)
-    // Whatever someone published is theirs to pass on, not to index.
-    expect(robots).toContain('Disallow: /storage/c/')
+    expect(robots).toContain('Disallow: /api/')
   })
 
   test('the sitemap lists every demo', async ({ page }) => {
@@ -123,10 +122,5 @@ test.describe('site metadata', () => {
         ).toBeGreaterThanOrEqual(14)
       })
     }
-  })
-
-  test('a shared file asks not to be indexed', async ({ page }) => {
-    await page.goto('/storage/c/not-a-cid')
-    expect(await meta(page, 'name="robots"')).toContain('noindex')
   })
 })

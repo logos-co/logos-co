@@ -4,7 +4,6 @@ import { useCallback, useRef, useState } from 'react'
 
 import { CopyButton } from '@/components/copy-button'
 import { useCidCompute } from '@/components/use-cid-compute'
-import { useShareContent } from '@/components/use-share-content'
 import { BLOCK_SIZE } from '@/lib/storage-cid'
 
 const readableSize = (bytes: number) =>
@@ -61,17 +60,15 @@ function TreeLevels({ levels }: { levels: string[][] }) {
 
 export function StorageCidPanel() {
   const { file, isComputing, error, compute, reset } = useCidCompute()
-  const share = useShareContent()
   const [isOver, setIsOver] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const take = useCallback(
     (picked: File | undefined) => {
       if (!picked) return
-      share.reset()
       void compute(picked)
     },
-    [compute, share]
+    [compute]
   )
 
   return (
@@ -127,17 +124,25 @@ export function StorageCidPanel() {
             </span>
             <button
               type="button"
-              onClick={() => {
-                share.reset()
-                reset()
-              }}
+              onClick={reset}
               className="text-body-sans cursor-pointer text-gray-05 underline"
             >
               Clear
             </button>
           </div>
 
-          <Row label="CID" value={file.breakdown.cid} />
+          <div className="flex flex-col gap-1">
+            <span className="text-label text-gray-05">Content address</span>
+            <div className="flex items-start gap-2">
+              <code className="text-mono-body min-w-0 break-all text-gray-06">
+                {file.breakdown.cid}
+              </code>
+              <CopyButton
+                value={file.breakdown.cid}
+                label="Copy the content address"
+              />
+            </div>
+          </div>
 
           <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Stat
@@ -165,75 +170,8 @@ export function StorageCidPanel() {
             <span className="text-label text-gray-05">Merkle tree</span>
             <TreeLevels levels={file.breakdown.levels} />
           </div>
-
-          <ShareRow
-            share={share}
-            onShare={() =>
-              share.publish(
-                file.bytes,
-                file.breakdown.cid,
-                file.mimetype,
-                file.name
-              )
-            }
-          />
         </div>
       )}
     </section>
-  )
-}
-
-function ShareRow({
-  share,
-  onShare,
-}: {
-  share: ReturnType<typeof useShareContent>
-  onShare: () => void
-}) {
-  if (share.availability === 'unknown') return null
-
-  if (share.availability === 'disabled') {
-    return (
-      <p className="text-body-sans text-gray-05">
-        Sharing is off in this deployment. The CID above is still the real one.
-      </p>
-    )
-  }
-
-  return (
-    <div className="flex flex-col gap-2 border-t border-gray-01 pt-4">
-      {share.url ? (
-        <div className="flex flex-col gap-1">
-          <span className="text-label text-gray-05">Shareable link</span>
-          <div className="flex items-start gap-2">
-            <a
-              href={share.url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-mono-body break-all text-brand-dark-green underline"
-            >
-              {share.url}
-            </a>
-            <CopyButton value={share.url} label="Copy the shareable link" />
-          </div>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={onShare}
-          disabled={share.isPublishing}
-          className="text-body-sans w-fit cursor-pointer border border-gray-02 bg-white px-3 py-1.5 text-brand-dark-green hover:bg-gray-00 disabled:cursor-default disabled:text-gray-04"
-        >
-          {share.isPublishing ? 'Publishing…' : 'Get a shareable link'}
-        </button>
-      )}
-      {share.error && <p className="text-body-sans text-red">{share.error}</p>}
-      <p className="text-body-sans text-gray-05">
-        The CID is the one Logos Storage would give this file. The bytes are
-        served from this app&rsquo;s own store, because no public Logos Storage
-        node accepts uploads. Opening the link re-hashes what comes back and
-        checks it against the CID in the URL.
-      </p>
-    </div>
   )
 }
