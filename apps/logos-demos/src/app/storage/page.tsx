@@ -6,14 +6,6 @@ import { findDemo } from '@/demos/registry'
 
 const DEMO_HREF = '/storage'
 
-/**
- * Whether a store is wired up for sharing.
- *
- * Read on the server so the page can say so before anyone clicks, rather than
- * offering a button that fails.
- */
-const isShareEnabled = Boolean(process.env.BLOB_READ_WRITE_TOKEN)
-
 function SectionHeading({
   title,
   children,
@@ -51,7 +43,7 @@ export default function Page() {
           work it out without asking the network. The answer matches what a
           Logos Storage node returns.
         </SectionHeading>
-        <StorageCidPanel isShareEnabled={isShareEnabled} />
+        <StorageCidPanel />
       </section>
 
       <section className="flex flex-col gap-4">

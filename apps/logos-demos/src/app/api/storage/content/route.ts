@@ -8,6 +8,7 @@ import {
   isCid,
   MAX_SHARE_BYTES,
 } from '@/lib/storage-share'
+import { isAcceptedMimetype } from '@/lib/storage-mimetypes'
 
 /**
  * Stores a file so a CID can be opened from outside this tab.
@@ -21,8 +22,27 @@ import {
 
 export const runtime = 'nodejs'
 
+/** Whether a store is wired up. Read per request, never at build time. */
+const isConfigured = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN)
+
+/**
+ * Whether this deployment can publish.
+ *
+ * The page that asks is statically prerendered, so it cannot read the
+ * environment itself: a build-time read is frozen into the HTML, and adding or
+ * rotating the token later would not change it until the next build. Asking a
+ * route handler moves the question to request time, where the answer is
+ * current.
+ */
+export async function GET() {
+  return NextResponse.json(
+    { enabled: isConfigured() },
+    { headers: { 'Cache-Control': 'no-store' } }
+  )
+}
+
 export async function POST(request: Request) {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  if (!isConfigured()) {
     return NextResponse.json(
       { error: 'Sharing is not configured in this deployment.' },
       { status: 501 }
@@ -78,11 +98,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ cid, url: existing.blobs[0].url })
   }
 
-  const blob = await put(blobPathFor(cid, filename), Buffer.from(body), {
-    access: 'public',
-    contentType: mimetype,
-    addRandomSuffix: false,
-  })
+  const blob = await put(
+    blobPathFor(cid, filename, mimetype),
+    Buffer.from(body),
+    {
+      access: 'public',
+      // What the browser is served. The manifest's own value travels in the
+      // path, so this only affects rendering, never the CID.
+      contentType: mimetype ?? 'application/octet-stream',
+      addRandomSuffix: false,
+    }
+  )
 
   return NextResponse.json({ cid, url: blob.url })
 }

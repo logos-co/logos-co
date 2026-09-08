@@ -73,6 +73,25 @@ still compressed, so even a one-block file has a level above its leaf.
 `manifestVersion`, `treeCid`, `blockSize`, `datasetSize`, `codec`, `hcodec`,
 `version`, `filename`, `mimetype`.
 
+## Nodes refuse most MIME types
+
+The node does not store whatever Content-Type you send. It looks the value up
+in nim's `std/mimetypes` and answers 422 when nothing maps to it:
+
+```nim
+let extension = m.getExt(mimetypeVal, "")
+if extension == "":
+  return RestApiResponse.error(Http422, "The MIME type ... is not valid.")
+```
+
+`text/markdown` is not in that table, and browsers report it for every `.md`
+file — so dropping a README on the demo hits this. An upload with **no**
+Content-Type is fine, though: the field is simply left out of the manifest.
+
+That is what the page does when the browser's type would be refused, and it
+says so. `src/lib/storage-mimetypes.ts` carries the accepted set, generated
+from nim's table. Do not widen it by guessing; check against a node.
+
 ## Two traps
 
 **`version` is 2, not 1.** The field holds nim-libp2p's `CidVersion` enum,

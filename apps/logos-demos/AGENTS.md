@@ -82,6 +82,20 @@ A missing `access-control-allow-origin` header looks exactly like a success in a
 
 Do the same for anything that reimplements a protocol. A self-consistent test proves the code agrees with itself, which is exactly the thing that was never in doubt. Prebuilt binaries and stored artefacts on disk beat guessing: when the manifest encoding was wrong, `xxd` on the node's own manifest file named the field in seconds.
 
+## Deployment facts are runtime facts, not build-time ones
+
+`/storage` is statically prerendered, so anything it reads from `process.env` while rendering is frozen into the HTML at build time. That is how the share button came to say "sharing is off" on a deployment whose token was present: the value was correct at build and stale forever after.
+
+Worse, the build does not even see most variables. `turbo.json` declares an `env` allowlist, and Turborepo 2 strips everything else from the build environment, so a newly added variable is invisible until it is declared there too.
+
+**Ask a route handler instead.** Route handlers run per request and see the real environment, with no turbo declaration needed. `GET /api/storage/content` exists only to answer "can this deployment publish?".
+
+## The mimetype is part of the CID, and nodes refuse most of them
+
+A node maps the request's Content-Type through nim's `std/mimetypes` and answers 422 if nothing matches. `text/markdown` does not match, so dropping any `.md` file — a README, for instance — hits it. Uploading with no Content-Type is allowed and the manifest simply omits the field.
+
+`src/lib/storage-mimetypes.ts` carries the accepted set, generated from nim's table. Do not widen it by guessing; check against a node.
+
 ## Blockchain Notes
 
 - The nodes come from `deployment/.env.testnet` in `logos-blockchain`: `PUBLIC_IP_ADDR` with API ports 18080-18083. They are public and send `access-control-allow-origin: *`.

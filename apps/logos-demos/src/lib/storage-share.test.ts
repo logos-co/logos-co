@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { blobPathFor, filenameFromBlobPath, isCid } from './storage-share'
+import { blobPathFor, metadataFromBlobPath, isCid } from './storage-share'
 
 const REAL_CID = 'zDvZRwzm1XSHX9H19xAyPoetd9JwN4iKAmk5DKcMdu5wy9kNrYzj'
 
@@ -34,14 +34,14 @@ describe('isCid', () => {
   })
 
   it('keeps every CID inside one prefix', () => {
-    expect(blobPathFor(REAL_CID, 'a.png')).toBe(
-      `logos-demos/content/${REAL_CID}/a.png`,
+    expect(blobPathFor(REAL_CID, 'a.png', 'image/png')).toBe(
+      `logos-demos/content/${REAL_CID}/image%2Fpng/a.png`
     )
   })
 })
 
-describe('filenames in the stored path', () => {
-  // The filename is a manifest field, so it is part of the CID. If it did not
+describe('manifest fields in the stored path', () => {
+  // Both are manifest fields, so both are part of the CID. If either did not
   // survive storage exactly, the shared page would re-derive a different CID
   // and report a mismatch on a file that is perfectly intact.
   it.each([
@@ -52,15 +52,34 @@ describe('filenames in the stored path', () => {
     '..',
     'percent%20already.txt',
     'quote"and#hash.gif',
-  ])('round-trips %j', (filename) => {
-    const path = blobPathFor(REAL_CID, filename)
-    expect(filenameFromBlobPath(path)).toBe(filename)
+  ])('round-trips the filename %j', (filename) => {
+    const path = blobPathFor(REAL_CID, filename, 'image/png')
+    expect(metadataFromBlobPath(path)).toEqual({
+      filename,
+      mimetype: 'image/png',
+    })
+  })
+
+  it.each(['image/png', 'text/plain', 'application/vnd.ms-excel', null])(
+    'round-trips the mimetype %j',
+    (mimetype) => {
+      const path = blobPathFor(REAL_CID, 'a.bin', mimetype)
+      expect(metadataFromBlobPath(path)?.mimetype).toBe(mimetype)
+    }
+  )
+
+  it('cannot confuse a real mimetype with the no-mimetype marker', () => {
+    // Every mimetype has a slash, which encodes, so none can spell `none`.
+    expect(blobPathFor(REAL_CID, 'a.bin', 'x/none')).toContain('x%2Fnone')
+    expect(
+      metadataFromBlobPath(blobPathFor(REAL_CID, 'a.bin', 'x/none'))
+    ).toEqual({ filename: 'a.bin', mimetype: 'x/none' })
   })
 
   it('keeps a name with slashes inside the CID prefix', () => {
     // Otherwise a name could invent path segments and land elsewhere.
-    const path = blobPathFor(REAL_CID, '../../escape.txt')
+    const path = blobPathFor(REAL_CID, '../../escape.txt', 'text/plain')
     expect(path.startsWith(`logos-demos/content/${REAL_CID}/`)).toBe(true)
-    expect(path.split('/')).toHaveLength(4)
+    expect(path.split('/')).toHaveLength(5)
   })
 })

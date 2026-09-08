@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { SharedContent } from '@/components/shared-content'
-import { blobPrefixFor, filenameFromBlobPath, isCid } from '@/lib/storage-share'
+import { blobPrefixFor, metadataFromBlobPath, isCid } from '@/lib/storage-share'
 
 /**
  * Opens a file by its Logos Storage CID.
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   title: 'Shared content — Logos Demos',
 }
 
-/** The one object stored under a CID, with the filename its path carries. */
+/** The one object stored under a CID, with the manifest fields its path carries. */
 async function findPublished(cid: string) {
   if (!isCid(cid) || !process.env.BLOB_READ_WRITE_TOKEN) return null
 
@@ -29,11 +29,10 @@ async function findPublished(cid: string) {
   const blob = found?.blobs[0]
   if (!blob) return null
 
-  return {
-    url: blob.url,
-    size: blob.size,
-    filename: filenameFromBlobPath(blob.pathname),
-  }
+  const metadata = metadataFromBlobPath(blob.pathname)
+  if (!metadata) return null
+
+  return { url: blob.url, size: blob.size, ...metadata }
 }
 
 export default async function SharedContentPage({ params }: Props) {
@@ -54,6 +53,7 @@ export default async function SharedContentPage({ params }: Props) {
           cid={cid}
           url={published.url}
           filename={published.filename}
+          mimetype={published.mimetype}
           size={published.size}
         />
       ) : (

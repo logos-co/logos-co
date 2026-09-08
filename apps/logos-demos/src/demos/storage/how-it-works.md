@@ -60,6 +60,14 @@ flowchart LR
   manifest --> cid[CID]
 ```
 
+## Why the type sometimes says none
+
+A node will not accept any Content-Type. It looks the value up in a table of
+known file types and refuses anything it cannot place — and `text/markdown`,
+which browsers report for every `.md` file, is one of those. Uploading with no
+type at all is allowed, and the manifest then records none. So for those files
+the page shows the CID for that upload, and says which type was refused.
+
 ## The shareable link
 
 The link the page hands back is served from this app's own store. Logos

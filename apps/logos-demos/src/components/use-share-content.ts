@@ -1,6 +1,9 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+
+/** Unknown until the server answers, so the page never guesses out loud. */
+export type ShareAvailability = 'unknown' | 'enabled' | 'disabled'
 
 export type ShareState = {
   url: string | null
@@ -13,23 +16,52 @@ const IDLE: ShareState = { url: null, isPublishing: false, error: null }
 /**
  * Publishes bytes under their CID and returns a link anyone can open.
  *
- * `isEnabled` comes from the server, because whether a store is configured is
- * a deployment fact the page should state up front rather than discover by
- * failing after someone clicks.
+ * Whether publishing is possible is asked of the server at runtime rather than
+ * read from the environment while rendering. The page is statically
+ * prerendered, so a build-time read would be frozen into the HTML — which is
+ * exactly what went wrong: the token existed, the deployed page still said
+ * sharing was off, and only a rebuild would have changed it.
  */
-export function useShareContent(isEnabled = true) {
+export function useShareContent() {
+  const [availability, setAvailability] = useState<ShareAvailability>('unknown')
   const [state, setState] = useState<ShareState>(IDLE)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const ask = async () => {
+      try {
+        const response = await fetch('/api/storage/content')
+        const payload = response.ok ? await response.json() : null
+        if (cancelled) return
+        setAvailability(payload?.enabled ? 'enabled' : 'disabled')
+      } catch {
+        // Treated as off rather than left unknown: a button that cannot work
+        // is worse than saying plainly that this deployment cannot publish.
+        if (!cancelled) setAvailability('disabled')
+      }
+    }
+
+    void ask()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const publish = useCallback(
     async (
       bytes: Uint8Array,
       cid: string,
-      mimetype: string,
+      mimetype: string | null,
       filename: string
     ) => {
       setState({ url: null, isPublishing: true, error: null })
 
-      const query = new URLSearchParams({ cid, mimetype, filename })
+      // No mimetype is a real state, not a missing parameter: the node stores
+      // nothing in that field, and the CID reflects that. It has to survive to
+      // the server or the recomputed CID will not match.
+      const query = new URLSearchParams({ cid, filename })
+      if (mimetype) query.set('mimetype', mimetype)
 
       try {
         const response = await fetch(`/api/storage/content?${query}`, {
@@ -65,5 +97,5 @@ export function useShareContent(isEnabled = true) {
 
   const reset = useCallback(() => setState(IDLE), [])
 
-  return { ...state, isEnabled, publish, reset }
+  return { ...state, availability, publish, reset }
 }
