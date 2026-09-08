@@ -28,7 +28,7 @@ export function References({ items }: { items: readonly Reference[] }) {
               href={item.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-full flex-col gap-1 border border-gray-02 bg-white p-3 no-underline transition-colors hover:bg-gray-00"
+              className="flex h-full flex-col gap-1 border border-gray-02 bg-white p-3 no-underline transition-colors hover:bg-gray-00 cursor-pointer"
             >
               <span className="text-body-sans text-brand-dark-green underline">
                 {item.label}
