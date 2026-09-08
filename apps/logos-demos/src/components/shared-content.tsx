@@ -7,8 +7,9 @@ import { computeCid } from '@/lib/storage-cid'
 type Props = {
   cid: string
   url: string
-  /** Recovered from the stored path. It is a manifest field, so the CID needs it. */
-  filename: string | null
+  /** Recovered from the stored path. Both are manifest fields the CID needs. */
+  filename: string
+  mimetype: string | null
   size: number
 }
 
@@ -28,9 +29,12 @@ const readableSize = (bytes: number) =>
  * the viewer does not have to trust the host: if a byte changed, the CID would
  * no longer be the one in the URL, and this says so.
  */
-export function SharedContent({ cid, url, filename, size }: Props) {
+export function SharedContent({ cid, url, filename, mimetype, size }: Props) {
   const [check, setCheck] = useState<Check>({ status: 'checking' })
-  const [mimetype, setMimetype] = useState('application/octet-stream')
+
+  // What to render as. The manifest's mimetype can be absent, and the file is
+  // still worth showing, so fall back to what the store serves it as.
+  const rendered = mimetype ?? 'application/octet-stream'
 
   useEffect(() => {
     let cancelled = false
@@ -42,17 +46,12 @@ export function SharedContent({ cid, url, filename, size }: Props) {
 
         const bytes = new Uint8Array(await response.arrayBuffer())
 
-        // The mimetype is a manifest field too, so it has to be the one the
-        // file was published with. The store echoes it back on the response;
-        // the filename comes from the stored path, via the `filename` prop.
-        const served =
-          response.headers.get('content-type') ?? 'application/octet-stream'
-        if (cancelled) return
-        setMimetype(served)
-
+        // Both manifest fields come from the stored path rather than from the
+        // response, because the store does not return the Content-Type it was
+        // given and never carried the filename at all.
         const { cid: computed } = await computeCid(bytes, {
           filename,
-          mimetype: served,
+          mimetype,
         })
         if (cancelled) return
 
@@ -74,22 +73,22 @@ export function SharedContent({ cid, url, filename, size }: Props) {
     return () => {
       cancelled = true
     }
-  }, [cid, url, filename])
+  }, [cid, url, filename, mimetype])
 
   return (
     <div className="flex flex-col gap-4">
       <div className="border border-gray-01 bg-white p-4">
-        {mimetype.startsWith('image/') ? (
+        {rendered.startsWith('image/') ? (
           /* Plain <img>: the blob URL is off this origin and the bytes must
              arrive unaltered for the CID check below to mean anything. */
           <img src={url} alt={cid} className="mx-auto max-h-[60vh] w-auto" />
-        ) : mimetype.startsWith('video/') ? (
+        ) : rendered.startsWith('video/') ? (
           <video src={url} controls className="mx-auto max-h-[60vh] w-auto" />
-        ) : mimetype.startsWith('audio/') ? (
+        ) : rendered.startsWith('audio/') ? (
           <audio src={url} controls className="w-full" />
         ) : (
           <p className="text-body-sans text-gray-06">
-            {mimetype} · {readableSize(size)}. Nothing to render inline.
+            {rendered} · {readableSize(size)}. Nothing to render inline.
           </p>
         )}
       </div>

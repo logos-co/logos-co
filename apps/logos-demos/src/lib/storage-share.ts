@@ -30,21 +30,52 @@ export const isCid = (value: string): boolean =>
 export const blobPrefixFor = (cid: string) => `logos-demos/content/${cid}/`
 
 /**
- * The filename is part of the manifest, so it is part of the CID: the same
- * bytes under a different name have a different address. It has to survive the
- * round trip or the reader cannot re-derive the CID, and Vercel Blob has no
- * metadata field to put it in — so it is carried in the path, encoded, and
- * decoded back on read. Encoding also stops a name introducing path segments.
+ * A file with no mimetype is a real state, not a missing value: a node refuses
+ * a Content-Type it cannot map to an extension, but accepts an upload with
+ * none and records nothing in that field.
+ *
+ * A mimetype always contains a slash, which encodes to `%2F`, so no encoded
+ * mimetype can collide with this marker.
  */
-export const blobPathFor = (cid: string, filename: string) =>
-  `${blobPrefixFor(cid)}${encodeURIComponent(filename)}`
+const NO_MIMETYPE = 'none'
 
-/** The filename a `blobPathFor` path was built from. */
-export function filenameFromBlobPath(pathname: string): string | null {
-  const segment = pathname.split('/').pop()
-  if (!segment) return null
+/**
+ * Where one published file lives.
+ *
+ * Both the filename and the mimetype are manifest fields, so both are part of
+ * the CID. They have to survive the round trip exactly or a reader re-derives a
+ * different CID and calls an intact file corrupt. Vercel Blob has no metadata
+ * to put them in and does not return the Content-Type it was given, so they are
+ * carried in the path. Encoding also stops either introducing path segments.
+ */
+export const blobPathFor = (
+  cid: string,
+  filename: string,
+  mimetype: string | null
+) =>
+  `${blobPrefixFor(cid)}${mimetype ? encodeURIComponent(mimetype) : NO_MIMETYPE}/${encodeURIComponent(filename)}`
+
+export type PublishedMetadata = {
+  filename: string
+  mimetype: string | null
+}
+
+/** The manifest fields a `blobPathFor` path was built from. */
+export function metadataFromBlobPath(
+  pathname: string
+): PublishedMetadata | null {
+  const segments = pathname.split('/')
+  if (segments.length < 2) return null
+
+  const [rawMimetype, rawFilename] = segments.slice(-2)
+  if (!rawMimetype || !rawFilename) return null
+
   try {
-    return decodeURIComponent(segment)
+    return {
+      mimetype:
+        rawMimetype === NO_MIMETYPE ? null : decodeURIComponent(rawMimetype),
+      filename: decodeURIComponent(rawFilename),
+    }
   } catch {
     // A malformed escape means this path was not written by `blobPathFor`.
     return null

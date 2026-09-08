@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from 'react'
 
 import type { CidBreakdown } from '@/lib/storage-cid'
 import { computeCid } from '@/lib/storage-cid'
+import { isAcceptedMimetype } from '@/lib/storage-mimetypes'
 
 /**
  * Files larger than this are refused.
@@ -15,7 +16,10 @@ export const MAX_FILE_BYTES = 8 * 1024 * 1024
 
 export type ComputedFile = {
   name: string
-  mimetype: string
+  /** What went into the manifest. Null when the node would have refused it. */
+  mimetype: string | null
+  /** What the browser reported, kept so the page can explain a refusal. */
+  reportedMimetype: string
   bytes: Uint8Array
   breakdown: CidBreakdown
 }
@@ -68,7 +72,16 @@ export function useCidCompute() {
       // The node reads the mimetype from the request's Content-Type and the
       // name from Content-Disposition. Both go into the manifest, so both
       // change the CID — a renamed file is a different CID.
-      const mimetype = file.type || 'application/octet-stream'
+      const reportedMimetype = file.type || 'application/octet-stream'
+
+      // A node refuses a Content-Type it cannot map to a file extension, and
+      // browsers report `text/markdown` for every .md file, which is one of
+      // them. Sending no Content-Type is allowed, though, and the node then
+      // leaves the field out — so that is the upload this CID describes.
+      const mimetype = isAcceptedMimetype(reportedMimetype)
+        ? reportedMimetype
+        : null
+
       const breakdown = await computeCid(bytes, {
         filename: file.name,
         mimetype,
@@ -76,7 +89,13 @@ export function useCidCompute() {
 
       if (currentRef.current !== token) return
       setState({
-        file: { name: file.name, mimetype, bytes, breakdown },
+        file: {
+          name: file.name,
+          mimetype,
+          reportedMimetype,
+          bytes,
+          breakdown,
+        },
         isComputing: false,
         error: null,
       })

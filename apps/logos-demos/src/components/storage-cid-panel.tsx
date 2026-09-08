@@ -9,11 +9,12 @@ import { BLOCK_SIZE } from '@/lib/storage-cid'
 const readableSize = (bytes: number) =>
   bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`
 
+/** One name/value pair. A real term and definition, not two styled spans. */
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-eyebrow text-gray-05">{label}</span>
-      <span className="text-h4-sans text-brand-dark-green">{value}</span>
+      <dt className="text-eyebrow text-gray-05">{label}</dt>
+      <dd className="text-h4-sans text-brand-dark-green">{value}</dd>
     </div>
   )
 }
@@ -57,9 +58,9 @@ function TreeLevels({ levels }: { levels: string[][] }) {
   )
 }
 
-export function StorageCidPanel({ isShareEnabled }: { isShareEnabled: boolean }) {
+export function StorageCidPanel() {
   const { file, isComputing, error, compute, reset } = useCidCompute()
-  const share = useShareContent(isShareEnabled)
+  const share = useShareContent()
   const [isOver, setIsOver] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -136,15 +137,25 @@ export function StorageCidPanel({ isShareEnabled }: { isShareEnabled: boolean })
 
           <Row label="CID" value={file.breakdown.cid} />
 
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Stat
               label="Size"
               value={readableSize(file.breakdown.datasetSize)}
             />
             <Stat label="Blocks" value={String(file.breakdown.blockCount)} />
             <Stat label="Block size" value={`${BLOCK_SIZE / 1024} KB`} />
-            <Stat label="Type" value={file.mimetype} />
-          </div>
+            <Stat label="Type" value={file.mimetype ?? 'none'} />
+          </dl>
+
+          {file.mimetype === null && (
+            <p className="text-caption-sans text-gray-05">
+              Your browser calls this {file.reportedMimetype}, which a Logos
+              Storage node refuses: it only accepts a Content-Type it can map to
+              a file extension. Uploading without one is allowed, and the node
+              then records no type at all — so that is the upload this CID
+              describes.
+            </p>
+          )}
 
           <Row label="Tree root" value={file.breakdown.treeCid} />
 
@@ -177,7 +188,9 @@ function ShareRow({
   share: ReturnType<typeof useShareContent>
   onShare: () => void
 }) {
-  if (!share.isEnabled) {
+  if (share.availability === 'unknown') return null
+
+  if (share.availability === 'disabled') {
     return (
       <p className="text-caption-sans text-gray-05">
         Sharing is off in this deployment. The CID above is still the real one.
