@@ -26,4 +26,27 @@ export const MAX_SHARE_BYTES = 4 * 1024 * 1024
 export const isCid = (value: string): boolean =>
   /^zD[A-HJ-NP-Za-km-z1-9]{40,70}$/.test(value)
 
-export const blobPathFor = (cid: string) => `logos-demos/content/${cid}`
+/** Everything published under one CID lives here. */
+export const blobPrefixFor = (cid: string) => `logos-demos/content/${cid}/`
+
+/**
+ * The filename is part of the manifest, so it is part of the CID: the same
+ * bytes under a different name have a different address. It has to survive the
+ * round trip or the reader cannot re-derive the CID, and Vercel Blob has no
+ * metadata field to put it in — so it is carried in the path, encoded, and
+ * decoded back on read. Encoding also stops a name introducing path segments.
+ */
+export const blobPathFor = (cid: string, filename: string) =>
+  `${blobPrefixFor(cid)}${encodeURIComponent(filename)}`
+
+/** The filename a `blobPathFor` path was built from. */
+export function filenameFromBlobPath(pathname: string): string | null {
+  const segment = pathname.split('/').pop()
+  if (!segment) return null
+  try {
+    return decodeURIComponent(segment)
+  } catch {
+    // A malformed escape means this path was not written by `blobPathFor`.
+    return null
+  }
+}

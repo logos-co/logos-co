@@ -1,9 +1,9 @@
-import { head } from '@vercel/blob'
+import { list } from '@vercel/blob'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { SharedContent } from '@/components/shared-content'
-import { blobPathFor, isCid } from '@/lib/storage-share'
+import { blobPrefixFor, filenameFromBlobPath, isCid } from '@/lib/storage-share'
 
 /**
  * Opens a file by its Logos Storage CID.
@@ -19,12 +19,26 @@ export const metadata: Metadata = {
   title: 'Shared content — Logos Demos',
 }
 
+/** The one object stored under a CID, with the filename its path carries. */
+async function findPublished(cid: string) {
+  if (!isCid(cid) || !process.env.BLOB_READ_WRITE_TOKEN) return null
+
+  const found = await list({ prefix: blobPrefixFor(cid), limit: 1 }).catch(
+    () => null
+  )
+  const blob = found?.blobs[0]
+  if (!blob) return null
+
+  return {
+    url: blob.url,
+    size: blob.size,
+    filename: filenameFromBlobPath(blob.pathname),
+  }
+}
+
 export default async function SharedContentPage({ params }: Props) {
   const { cid } = await params
-
-  const blob = isCid(cid)
-    ? await head(blobPathFor(cid)).catch(() => null)
-    : null
+  const published = await findPublished(cid)
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
@@ -35,12 +49,12 @@ export default async function SharedContentPage({ params }: Props) {
         <code className="text-mono-s break-all text-gray-06">{cid}</code>
       </div>
 
-      {blob ? (
+      {published ? (
         <SharedContent
           cid={cid}
-          url={blob.url}
-          mimetype={blob.contentType ?? 'application/octet-stream'}
-          size={blob.size}
+          url={published.url}
+          filename={published.filename}
+          size={published.size}
         />
       ) : (
         <p className="text-body-sans text-gray-06">
