@@ -11,7 +11,16 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const PORT = 3005
-const BASE_URL = `http://localhost:${PORT}`
+
+/**
+ * Where to run.
+ *
+ * Defaults to a dev server started here. Set `E2E_BASE_URL` to point at a
+ * deployment instead — worth doing before calling a fix done, because the bugs
+ * this suite exists for were ones that only showed up on a real build.
+ */
+const DEPLOYED = process.env.E2E_BASE_URL
+const BASE_URL = DEPLOYED ?? `http://localhost:${PORT}`
 
 export default defineConfig({
   testDir: './e2e',
@@ -29,10 +38,20 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: {
-    command: `pnpm exec next dev --port ${PORT}`,
-    url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  // Nothing to start when testing a deployment.
+  webServer: DEPLOYED
+    ? undefined
+    : {
+        command: `pnpm exec next dev --port ${PORT}`,
+        url: BASE_URL,
+        /**
+         * A fresh server every run, unless asked otherwise.
+         *
+         * Reusing one is faster and was the default, until a run reused a
+         * server started before the fix under test and reported it broken.
+         * A suite that can test yesterday's code is worse than a slow one.
+         */
+        reuseExistingServer: Boolean(process.env.E2E_REUSE_SERVER),
+        timeout: 120_000,
+      },
 })
