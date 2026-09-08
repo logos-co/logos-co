@@ -96,6 +96,12 @@ A node maps the request's Content-Type through nim's `std/mimetypes` and answers
 
 `src/lib/storage-mimetypes.ts` carries the accepted set, generated from nim's table. Do not widen it by guessing; check against a node.
 
+## Page metadata replaces, it does not merge
+
+A page that sets `openGraph` or `twitter` in its metadata replaces the layout's object outright. Miss `images` or `card` and the page silently stops carrying a share card — nothing fails, the link just previews as bare text. `demoMetadata` in `src/demos/metadata.ts` restates them for that reason, and `e2e/metadata.spec.ts` checks every demo still has them.
+
+Titles, descriptions and the sitemap all come from `src/demos/registry.ts`, so a new demo needs an entry there and nothing else.
+
 ## Blockchain Notes
 
 - The nodes come from `deployment/.env.testnet` in `logos-blockchain`: `PUBLIC_IP_ADDR` with API ports 18080-18083. They are public and send `access-control-allow-origin: *`.

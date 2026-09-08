@@ -16,7 +16,11 @@ import { blobPrefixFor, metadataFromBlobPath, isCid } from '@/lib/storage-share'
 type Props = { params: Promise<{ cid: string }> }
 
 export const metadata: Metadata = {
-  title: 'Shared content — Logos Demos',
+  title: 'Shared content',
+  description:
+    'A file opened by its Logos Storage content address, checked against the CID in the URL.',
+  // Whatever someone published is theirs to pass on, not something to index.
+  robots: { index: false, follow: false },
 }
 
 /** The one object stored under a CID, with the manifest fields its path carries. */

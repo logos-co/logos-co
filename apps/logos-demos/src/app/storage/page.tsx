@@ -2,9 +2,12 @@ import { LearnMoreButton } from '@/components/learn-more-button'
 import { StorageCidPanel } from '@/components/storage-cid-panel'
 import { StorageNetwork } from '@/components/storage-network'
 import { readExplainer } from '@/demos/explainer'
+import { demoMetadata } from '@/demos/metadata'
 import { findDemo } from '@/demos/registry'
 
 const DEMO_HREF = '/storage'
+
+export const metadata = demoMetadata(DEMO_HREF)
 
 function SectionHeading({
   title,

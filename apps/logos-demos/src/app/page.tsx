@@ -1,6 +1,14 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { DEMOS } from '@/demos/registry'
+import { SITE_DESCRIPTION } from '@/lib/site'
+
+export const metadata: Metadata = {
+  // The root title is the site name itself, so the template is skipped here.
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: '/' },
+}
 
 export default function Page() {
   return (
