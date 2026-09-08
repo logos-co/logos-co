@@ -90,6 +90,18 @@ Worse, the build does not even see most variables. `turbo.json` declares an `env
 
 **Ask a route handler instead.** Route handlers run per request and see the real environment, with no turbo declaration needed. `GET /api/storage/content` exists only to answer "can this deployment publish?".
 
+## Cover both mimetype paths, not just the easy one
+
+A file either carries a mimetype or does not, and those are different code paths through publishing. Testing only the first hid a real bug twice: the share route defaulted a missing mimetype to `application/octet-stream`, recomputed a CID that did not match the one the page sent, and answered 422 on a perfectly honest upload. Every test passed, because they all used a png.
+
+`e2e/storage.spec.ts` now publishes both a png and a markdown file. Keep it that way.
+
+## Run the end-to-end suite against a deployment before calling a fix done
+
+`E2E_BASE_URL=<url> pnpm --filter logos-demos test:e2e` skips the dev server and drives that deployment instead. Both share bugs so far only appeared on a real build, and a local pass said nothing about either.
+
+The suite starts a **fresh** dev server each run. It used to reuse a running one, and a run then reused a server started before the fix under test and reported it broken. Set `E2E_REUSE_SERVER=1` to opt back in, but not while judging whether a change worked.
+
 ## The mimetype is part of the CID, and nodes refuse most of them
 
 A node maps the request's Content-Type through nim's `std/mimetypes` and answers 422 if nothing matches. `text/markdown` does not match, so dropping any `.md` file — a README, for instance — hits it. Uploading with no Content-Type is allowed and the manifest simply omits the field.

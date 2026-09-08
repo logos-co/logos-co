@@ -132,7 +132,9 @@ running the published binary locally and uploading each input, so they fail if
 the implementation drifts from the network. A test that only agrees with itself
 would never catch that. See [`docs/storage-cid.md`](./docs/storage-cid.md).
 
-`test:e2e` runs Playwright over the flows a person actually takes: a real file
+`test:e2e` runs Playwright over the flows a person actually takes. Point it at a
+deployment with `E2E_BASE_URL=<url>`, which is worth doing before calling a fix
+done: both share bugs so far appeared only on a real build. It covers: a real file
 through a real file input, the CID on screen, and a shared link opened as a
 fresh page and verified. It also checks that every page still carries a title,
 a description and a share card. The share tests skip themselves when no store

@@ -51,8 +51,11 @@ export async function POST(request: Request) {
 
   const url = new URL(request.url)
   const claimedCid = url.searchParams.get('cid') ?? ''
-  const mimetype =
-    url.searchParams.get('mimetype') || 'application/octet-stream'
+  // Absent means the file has no mimetype, which is a state the node has too:
+  // it refuses a Content-Type it cannot place, but accepts an upload with none
+  // and leaves the manifest field out. Defaulting here instead would recompute
+  // a different CID from the one the page sent and reject an honest upload.
+  const mimetype = url.searchParams.get('mimetype')
   const filename = url.searchParams.get('filename') || ''
 
   if (!isCid(claimedCid)) {

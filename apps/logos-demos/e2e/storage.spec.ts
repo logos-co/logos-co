@@ -120,24 +120,43 @@ test.describe('storage demo', () => {
     }
   })
 
-  test('publishes a link that opens and verifies', async ({ page }) => {
-    test.skip(!(await sharingEnabled(page)), 'No store configured')
-
-    await drop(page, TILE)
+  /**
+   * Publish one file and follow the link it gives back.
+   *
+   * Run for a file that has a mimetype and one that does not, because those
+   * are different code paths and only the first was covered once: the server
+   * defaulted the missing mimetype, recomputed a different CID, and rejected
+   * an upload that was perfectly honest. A png passed throughout.
+   */
+  async function publishAndOpen(page: Page, file: typeof TILE) {
+    await drop(page, file)
     await page.getByRole('button', { name: 'Get a shareable link' }).click()
 
     const link = page.getByText(/\/storage\/c\/zD/)
     await expect(link).toBeVisible()
 
     const shared = (await link.innerText()).trim()
-    expect(shared).toContain(TILE.cid)
+    expect(shared).toContain(file.cid)
 
     await page.goto(shared)
-
-    await expect(page.getByRole('img', { name: TILE.cid })).toBeVisible()
     await expect(
       page.getByText('These bytes hash to the CID in the URL')
     ).toBeVisible()
+  }
+
+  test('publishes a link that opens and verifies', async ({ page }) => {
+    test.skip(!(await sharingEnabled(page)), 'No store configured')
+
+    await publishAndOpen(page, TILE)
+    await expect(page.getByRole('img', { name: TILE.cid })).toBeVisible()
+  })
+
+  test('publishes a file that has no mimetype', async ({ page }) => {
+    test.skip(!(await sharingEnabled(page)), 'No store configured')
+
+    // The README case. Nothing renders inline, but the link must still work
+    // and the bytes must still check out against the CID.
+    await publishAndOpen(page, NOTES)
   })
 
   test('refuses a CID that has nothing published under it', async ({
