@@ -9,7 +9,12 @@ export type Demo = {
   label: string
   /** Which part of the Logos stack this exercises. */
   stack: string
-  /** One line, shown on the overview and as the demo's own standfirst. */
+  /**
+   * One line, shown on the overview.
+   *
+   * Say what a visitor does here, in words they already know. Not what the
+   * technology is called.
+   */
   summary: string
 }
 
@@ -19,21 +24,21 @@ export const DEMOS: readonly Demo[] = [
     label: 'Logos Messaging',
     stack: 'Delivery',
     summary:
-      'Your browser joins the peer-to-peer messaging network directly and exchanges messages with other browsers. No backend, no account, no install.',
+      'Send a message from this tab to any other tab, with no server in between.',
   },
   {
     href: '/blockchain',
     label: 'Logos Blockchain',
     stack: 'Cryptarchia',
     summary:
-      'Live blocks and consensus state read from the Logos Blockchain testnet nodes, including the proof of leadership behind each block.',
+      'Watch blocks arrive on the live test network, and open any one of them.',
   },
   {
     href: '/storage',
     label: 'Logos Storage',
     stack: 'Network',
     summary:
-      'Work out the address Logos Storage would give a file, in the browser, and see the live roster of nodes running the network.',
+      'Drop in a file and see the address the network would give it.',
   },
 ]
 
