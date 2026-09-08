@@ -12,6 +12,7 @@ endpoints, and re-deriving it costs hours.
 | [logos-stack.md](./logos-stack.md) | The stack: naming, layers, modules, and which repository owns what |
 | [network-access.md](./network-access.md) | The live networks and endpoints, and which are reachable from a browser |
 | [browser-viability.md](./browser-viability.md) | Per protocol: can this run in a browser, and what does it need |
+| [storage-research.md](./storage-research.md) | The second pass over Logos Storage: everything probed, and what is left |
 | [waku-sdk-notes.md](./waku-sdk-notes.md) | `@waku/sdk` behaviour that is not obvious from its types |
 | [deployment.md](./deployment.md) | How this app deploys, and the Vercel traps in this monorepo |
 
