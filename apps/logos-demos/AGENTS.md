@@ -112,6 +112,14 @@ A node maps the request's Content-Type through nim's `std/mimetypes` and answers
 
 `src/lib/storage-mimetypes.ts` carries the accepted set, generated from nim's table. Do not widen it by guessing; check against a node.
 
+## Show the shape while waiting, never a blank
+
+Every demo reads a live network, so there is always a wait: four testnet nodes, a roster fetch, a light node finding peers. Blank and then suddenly full reads as broken and then startling.
+
+`src/components/skeleton.tsx` holds the placeholders. Mirror the real layout rather than inventing a generic box, and keep labels as real text: they are known before the values are, and `Height` is more use than a grey rectangle.
+
+**A skeleton cannot promise identical height.** A value of unknown length may wrap, and some network names do. It promises the rows exist from the start, so the card settles instead of unfolding. `e2e/loading.spec.ts` delays the responses on purpose, because locally they answer in well under a second and none of this can be seen by hand.
+
 ## Page metadata replaces, it does not merge
 
 A page that sets `openGraph` or `twitter` in its metadata replaces the layout's object outright. Miss `images` or `card` and the page silently stops carrying a share card — nothing fails, the link just previews as bare text. `demoMetadata` in `src/demos/metadata.ts` restates them for that reason, and `e2e/metadata.spec.ts` checks every demo still has them.

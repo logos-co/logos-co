@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
+import { SkeletonCard, SkeletonLine, SkeletonStat } from '@/components/skeleton'
 import { useChain } from '@/components/use-chain'
 import { useChainStream } from '@/components/use-chain-stream'
 import type { Block, NodeStatus } from '@/lib/cryptarchia'
@@ -67,6 +68,66 @@ function Liveness({
       <span className="text-body-sans text-gray-05">
         height last changed {formatAge(liveness.sinceMs)}
       </span>
+    </div>
+  )
+}
+
+/**
+ * The page's shape while the nodes are being read.
+ *
+ * Deliberately the same structure as what replaces it: one summary card, four
+ * stats, two node cards and a few block rows. Reading the four testnet nodes
+ * and walking back through block headers takes a moment, and a page that is
+ * blank for that moment looks broken.
+ */
+function ChainSkeleton() {
+  return (
+    <div
+      aria-busy="true"
+      aria-label="Reading the testnet nodes"
+      className="flex flex-col gap-6"
+    >
+      <section className="flex flex-col gap-5 border border-gray-01 bg-white p-5">
+        <SkeletonLine className="text-body-sans w-56" />
+
+        <dl className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+          {['Height', 'Slot', 'Epoch', 'Finality gap'].map((label) => (
+            <SkeletonStat key={label} label={label} />
+          ))}
+        </dl>
+
+        <div className="flex flex-col gap-4 border-t border-gray-01 pt-4">
+          {['Chain tip', 'Last irreversible block'].map((label) => (
+            <div key={label} className="flex flex-col gap-1">
+              <span className="text-label text-gray-05">{label}</span>
+              <SkeletonLine className="text-mono-body w-full max-w-[34rem]" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-label text-gray-05">Testnet nodes</h2>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-label text-gray-05">Recent blocks</h2>
+        <ul className="flex flex-col border border-gray-01 bg-white">
+          {Array.from({ length: 4 }, (_, i) => (
+            <li
+              key={i}
+              className="flex items-center justify-between gap-4 border-b border-gray-01 p-4 last:border-b-0"
+            >
+              <SkeletonLine className="text-body-sans w-16" />
+              <SkeletonLine className="text-mono-body w-full max-w-72" />
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   )
 }
@@ -201,9 +262,7 @@ export function ChainView() {
         </p>
       )}
 
-      {isLoading && !view && !error && (
-        <p className="text-body-sans text-gray-04">Reading the testnet nodes…</p>
-      )}
+      {isLoading && !view && !error && <ChainSkeleton />}
 
       {lead && (
         <section className="flex flex-col gap-5 border border-gray-01 bg-white p-5">
