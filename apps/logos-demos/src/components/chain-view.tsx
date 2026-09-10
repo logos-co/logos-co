@@ -193,7 +193,9 @@ function BlockRow({ block, isLive }: { block: Block; isLive?: boolean }) {
             {block.transactionCount === 1 ? 'tx' : 'txs'}
           </span>
           <span className="text-mono-body w-full text-gray-04 sm:w-auto">
-            {block.timestamp === null ? '—' : formatTimestamp(block.timestamp)}
+            {block.timestamp === null
+              ? 'no time yet'
+              : formatTimestamp(block.timestamp)}
           </span>
         </summary>
 
@@ -212,7 +214,7 @@ function BlockRow({ block, isLive }: { block: Block; isLive?: boolean }) {
           <div className="flex flex-col gap-1">
             <dt className="text-label text-gray-05">Parent</dt>
             <dd className="text-mono-body break-all text-gray-06">
-              {block.parent || '—'}
+              {block.parent || 'none, this is the first block'}
             </dd>
           </div>
           <div className="flex flex-col gap-1">
@@ -220,19 +222,19 @@ function BlockRow({ block, isLive }: { block: Block; isLive?: boolean }) {
               Leader key (proof of leadership)
             </dt>
             <dd className="text-mono-body break-all text-gray-06">
-              {block.leaderKey || '—'}
+              {block.leaderKey || 'not reported'}
             </dd>
           </div>
           <div className="flex flex-col gap-1">
             <dt className="text-label text-gray-05">Voucher commitment</dt>
             <dd className="text-mono-body break-all text-gray-06">
-              {block.voucherCommitment || '—'}
+              {block.voucherCommitment || 'not reported'}
             </dd>
           </div>
           <div className="flex flex-col gap-1">
             <dt className="text-label text-gray-05">Entropy contribution</dt>
             <dd className="text-mono-body break-all text-gray-06">
-              {block.entropyContribution || '—'}
+              {block.entropyContribution || 'not reported'}
             </dd>
           </div>
         </dl>
@@ -273,7 +275,7 @@ export function ChainView() {
             <Stat label="Slot" value={String(lead.slot)} />
             <Stat
               label="Epoch"
-              value={view?.time ? String(view.time.currentEpoch) : '—'}
+              value={view?.time ? String(view.time.currentEpoch) : 'unknown'}
             />
             <Stat label="Finality gap" value={`${finalityGap(lead)} slots`} />
           </dl>

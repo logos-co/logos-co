@@ -40,7 +40,7 @@ function EmptyState({ isReady }: { isReady: boolean }) {
   if (!isReady) {
     return 'Connecting this browser to the messaging network…'
   }
-  return 'No messages yet. Say something — or open this page in a second tab and watch it arrive over the network.'
+  return 'No messages yet. Say something, or open this page in a second tab and watch it arrive over the network.'
 }
 
 export function ChatRoom() {

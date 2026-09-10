@@ -23,7 +23,7 @@ const STATUS_TONE: Record<NodeSnapshot['status'], string> = {
  * A field whose value only exists once the node has settled.
  *
  * Starting a light node and finding peers takes seconds, so these would read
- * `0` and `—` and then change. A placeholder says the answer is still coming
+ * a zero and a blank and then change. A placeholder says the answer is coming
  * instead of stating a wrong one.
  */
 function Field({
@@ -71,7 +71,11 @@ export function NetworkStatus({ snapshot }: { snapshot: NodeSnapshot }) {
         />
         <Field
           label="This browser's peer id"
-          value={snapshot.selfPeerId ? shortenPeerId(snapshot.selfPeerId) : '—'}
+          value={
+            snapshot.selfPeerId
+              ? shortenPeerId(snapshot.selfPeerId)
+              : 'not started'
+          }
           isPending={!snapshot.selfPeerId && snapshot.status !== 'failed'}
         />
         <Field label="Network" value="Public fleet" />

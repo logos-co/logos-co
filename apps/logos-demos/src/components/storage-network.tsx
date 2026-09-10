@@ -17,7 +17,9 @@ function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-0.5">
       <dt className="text-label text-gray-05">{label}</dt>
-      <dd className="text-mono-body break-all text-gray-06">{value || '—'}</dd>
+      <dd className="text-mono-body break-all text-gray-06">
+        {value || 'not published'}
+      </dd>
     </div>
   )
 }
